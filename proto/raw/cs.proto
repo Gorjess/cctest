@@ -1,0 +1,87 @@
+syntax="proto3";
+
+enum ERROR_CODE {
+  SUCCESS = 0;
+  FAILED  = 1;
+}
+
+enum CSMsgID {
+  REQ_BEGIN     = 0;
+  REQ_LOGIN     = 1;
+  REQ_HEARTBEAT = 2;
+
+  RSP_BEGIN     = 100;
+  RSP_LOGIN     = 101;
+  RSP_HEARTBEAT = 102;
+
+  NTF_BEGIN               = 200;
+  NTF_ROOM_MEMBER_ONLINE  = 201;
+  NTF_ROOM_CHAT           = 202;
+  NTF_ROOM_CLOSED         = 203;
+  NTF_HISTROY_MSG         = 204;
+}
+
+message CSHead {
+  CSMsgID MsgID        = 1;
+  int32   BodyLen      = 2;
+  bool    IsCompressed = 3;
+}
+
+message CSReqBody {
+  int64          Seq       = 1;
+  CSReqLogin     ReqLogin  = 2;
+  CSReqHeartbeat Heartbeat = 3;
+}
+
+message CSRspBody {
+  int64          Seq       = 1;
+  ERROR_CODE     ErrCode   = 2;
+  CSRspLogin     RspLogin  = 3;
+  CSRspHeartbeat Heartbeat = 4;
+}
+
+message CSNtfBody {
+  CSNtfKick             Kick = 1;
+  CSNtfRoomMemberOnline RoomMemberOnline = 2;
+  CSNtfRoomChat         RoomChat         = 3;
+  CSNtfRoomClosed       RoomClosed       = 4;
+  CSNtfHistoryMsg       HistoryMsg       = 5;
+}
+
+message CSReqLogin {
+
+}
+
+message CSRspLogin {
+
+}
+
+message CSReqHeartbeat {
+
+}
+
+message CSRspHeartbeat {
+
+}
+
+message CSNtfKick {
+
+}
+
+message CSNtfRoomMemberOnline {
+
+}
+
+message CSNtfRoomChat {
+
+}
+
+message CSNtfRoomClosed {
+
+}
+
+message CSNtfHistoryMsg {
+
+}
+
+
