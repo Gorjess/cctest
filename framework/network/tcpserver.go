@@ -17,9 +17,9 @@ type TCPServer struct {
 	NewAgent        func(*TCPConn) agent.Agent
 	ln              net.Listener
 
-	offChan            chan bool // 是否退出了
-	NumberOfConn       int32     // 本次统计内的连接数
-	NumberOfConnPreSec int32     // 1s允许的连接数
+	offChan             chan bool // 是否退出了
+	NumberOfConn        int32     // 本次统计内的连接数
+	ConnNumberPerSecond int32     // 1s允许的连接数
 
 	conns      ConnSet
 	mutexConns sync.Mutex // 不是很优雅，暂时先这样做
@@ -36,7 +36,7 @@ func (server *TCPServer) Start() {
 		return
 	}
 
-	if server.NumberOfConnPreSec > 0 { // 做了连接限制
+	if server.ConnNumberPerSecond > 0 { // 做了连接限制
 		go server.tick()
 	}
 
@@ -110,7 +110,7 @@ func closeConn(conn net.Conn) {
 func (server *TCPServer) run() {
 	server.wgLn.Add(1)
 	defer func() {
-		if server.NumberOfConnPreSec > 0 {
+		if server.ConnNumberPerSecond > 0 {
 			server.offChan <- true
 		}
 		server.wgLn.Done()
@@ -137,11 +137,11 @@ func (server *TCPServer) run() {
 		}
 		tempDelay = 0
 
-		if server.NumberOfConnPreSec > 0 { // 开启了限流
+		if server.ConnNumberPerSecond > 0 { // 开启了限流
 			num := atomic.AddInt32(&server.NumberOfConn, 1)
-			if num >= server.NumberOfConnPreSec { // 超过每秒允许的连接数 直接断开
+			if num >= server.ConnNumberPerSecond { // 超过每秒允许的连接数 直接断开
 				closeConn(conn)
-				log.Warn("too many connections per second [%s->%s]", num, server.NumberOfConnPreSec)
+				log.Warn("too many connections per second [%s->%s]", num, server.ConnNumberPerSecond)
 				continue
 			}
 		}

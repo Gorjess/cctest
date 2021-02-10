@@ -1,7 +1,6 @@
 package timer
 
 import (
-	"cloudcadetest/conf"
 	"cloudcadetest/framework/log"
 	"runtime"
 	"time"
@@ -34,13 +33,9 @@ func (t *Timer) CB() {
 	defer func() {
 		t.cb = nil
 		if r := recover(); r != nil {
-			if conf.LenStackBuf > 0 {
-				buf := make([]byte, conf.LenStackBuf)
-				l := runtime.Stack(buf, false)
-				log.Error("timer.CB:%v: %s", r, buf[:l])
-			} else {
-				log.Error("timer.CB:%v", r)
-			}
+			buf := make([]byte, 4096)
+			l := runtime.Stack(buf, false)
+			log.Error("timer.CB:%v: %s", r, buf[:l])
 		}
 	}()
 
@@ -68,32 +63,6 @@ func (c *Cron) Stop() {
 	if c.t != nil {
 		c.t.Stop()
 	}
-}
-
-func (disp *Dispatcher) CronFunc(name string, cronExpr *CronExpr, _cb func()) *Cron {
-	c := new(Cron)
-
-	now := time.Now()
-	nextTime := cronExpr.Next(now)
-	if nextTime.IsZero() {
-		return c
-	}
-
-	// callback
-	var cb func()
-	cb = func() {
-		defer _cb()
-
-		now := time.Now()
-		nextTime := cronExpr.Next(now)
-		if nextTime.IsZero() {
-			return
-		}
-		c.t = disp.AfterFunc(name, nextTime.Sub(now), cb)
-	}
-
-	c.t = disp.AfterFunc(name, nextTime.Sub(now), cb)
-	return c
 }
 
 // Ticker

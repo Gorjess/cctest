@@ -40,13 +40,15 @@ func NewTaskPool(taskNum, chanNum int) *Pool {
 	pool := &Pool{
 		Tasks: []*UpdateTask{},
 	}
-	//有配置初始化,检查下无效的值
+
+	//根据配置初始化, 否则设置默认值
 	if taskNum <= 0 {
 		taskNum = 300
 	}
 	if chanNum <= 0 {
 		chanNum = 10000
 	}
+
 	pool.chanNum = chanNum
 	for i := 0; i < taskNum; i++ {
 		task := &UpdateTask{t: make(chan *taskFuncPair, chanNum)}
@@ -154,7 +156,7 @@ func (t *UpdateTask) executeFun(pair *taskFuncPair) {
 	}
 
 	if pair.cb != nil {
-		t.skeleton.RunInSkeleton("status.executeFun", pair.cb)
+		pair.cb()
 	}
 }
 

@@ -1,8 +1,6 @@
 package module
 
 import (
-	"cloudcadetest/conf"
-	"cloudcadetest/framework/g"
 	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/rpc"
 	"cloudcadetest/framework/timer"
@@ -20,7 +18,6 @@ type ServerMod struct {
 	GoLen               int
 	TimerDispatcherLen  int
 	RPCServer           *rpc.Server
-	g                   *g.Go
 	dispatcher          *timer.Dispatcher
 	server              *rpc.Server
 	FuncGetExecTimeOut  func() int32
@@ -35,7 +32,6 @@ func (sm *ServerMod) Init(funcGetRpcExecTimeOut func() int32, funcGetBlockTimeOu
 		sm.TimerDispatcherLen = 0
 	}
 
-	sm.g = g.New(sm.GoLen)
 	sm.dispatcher = timer.NewDispatcher(sm.TimerDispatcherLen)
 	sm.server = sm.RPCServer
 	sm.FuncGetExecTimeOut = funcGetRpcExecTimeOut
@@ -65,17 +61,8 @@ func (sm *ServerMod) runTimer(t *timer.Timer) {
 			}
 		}
 
-		var err error
 		if r := recover(); r != nil {
-			if conf.LenStackBuf > 0 {
-				buf := make([]byte, conf.LenStackBuf)
-				l := runtime.Stack(buf, false)
-				err = fmt.Errorf("%v: %sm", r, buf[:l])
-			} else {
-				err = fmt.Errorf("%v", r)
-			}
-
-			log.Error("%v", err.Error())
+			dumpRecover(r)
 		}
 	}()
 
@@ -101,12 +88,18 @@ func GetFunctionName(i interface{}, seps ...rune) string {
 	return "invalid-func-name"
 }
 
+func dumpRecover(r interface{}) {
+	var err error
+	buf := make([]byte, 4096)
+	l := runtime.Stack(buf, false)
+	err = fmt.Errorf("%v: %sm", r, buf[:l])
+	log.Error("sm.runChanCB:%sm", err.Error())
+}
+
 func (sm *ServerMod) runChanCB(f func()) {
 	start := time.Now()
 
 	defer func() {
-		sm.g.PendingGo--
-
 		if sm.FuncGetExecTimeOut != nil {
 			timeOut := sm.FuncGetExecTimeOut()
 			if timeOut > 0 {
@@ -117,17 +110,8 @@ func (sm *ServerMod) runChanCB(f func()) {
 			}
 		}
 
-		var err error
 		if r := recover(); r != nil {
-			if conf.LenStackBuf > 0 {
-				buf := make([]byte, conf.LenStackBuf)
-				l := runtime.Stack(buf, false)
-				err = fmt.Errorf("%v: %sm", r, buf[:l])
-			} else {
-				err = fmt.Errorf("%v", r)
-			}
-
-			log.Error("sm.runChanCB:%sm", err.Error())
+			dumpRecover(r)
 		}
 	}()
 
@@ -179,25 +163,19 @@ func (sm *ServerMod) Run(closeSig chan bool) {
 	for {
 		select {
 		case <-closeSig:
-			log.Release("ServerMod closing")
+			log.Release("serverMod closing")
 			sm.server.Close()
 			log.Release("sm.server.Close()")
-			sm.g.Close()
-			log.Release("sm.g.Close()")
 			return
 
 		case ci := <-sm.server.ChanCall:
 			sm.runFunc(ci.GetId(), func() {
 				err := sm.server.Exec(ci)
 				if err != nil {
-					log.Error("%v", err)
+					log.Error("%s", err.Error())
 				}
 			})
 
-		case cb := <-sm.g.ChanCb:
-			sm.runFunc(nil, func() {
-				sm.runChanCB(cb)
-			})
 		case t := <-sm.dispatcher.ChanTimer:
 			sm.runFunc(t.Name, func() {
 				sm.runTimer(t)
@@ -224,14 +202,6 @@ func (sm *ServerMod) NewTicker(name string, d time.Duration, cb func()) *timer.T
 	}
 
 	return sm.dispatcher.NewTicker(name, d, cb)
-}
-
-func (sm *ServerMod) Go(f func(), cb func()) {
-	if sm.GoLen == 0 {
-		panic("invalid GoLen")
-	}
-
-	sm.g.Go(f, cb)
 }
 
 func (sm *ServerMod) RegisterChanRPC(id interface{}, f interface{}) {

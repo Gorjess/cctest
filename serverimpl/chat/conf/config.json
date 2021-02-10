@@ -1,0 +1,7 @@
+{
+  "max_conn_num": 10000,
+  "max_exec_func_time": 10,
+  "gate_pending_write_num": 1000,
+  "conn_num_per_second": 1000,
+  "player_interactive_time": 120
+}

@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"cloudcadetest/conf"
 	"cloudcadetest/framework/log"
 	"errors"
 	"fmt"
@@ -108,6 +107,12 @@ func (s *Server) ret(ci *CallInfo, ri *RetInfo) (err error) {
 	return
 }
 
+func doRecover(r interface{}) {
+	buf := make([]byte, 4096)
+	l := runtime.Stack(buf, false)
+	log.Error("%v: %s", r, buf[:l])
+}
+
 func (s *Server) Exec(ci *CallInfo) (err error) {
 	start := time.Now()
 	defer func() {
@@ -122,16 +127,7 @@ func (s *Server) Exec(ci *CallInfo) (err error) {
 		}
 
 		if r := recover(); r != nil {
-			if conf.LenStackBuf > 0 {
-				buf := make([]byte, conf.LenStackBuf)
-				l := runtime.Stack(buf, false)
-				err = fmt.Errorf("%v: %s", r, buf[:l])
-			} else {
-				err = fmt.Errorf("%v", r)
-			}
-
-			log.Error("%v", err.Error())
-
+			doRecover(r)
 			err = s.ret(ci, &RetInfo{err: fmt.Errorf("%v", r)})
 			if err != nil {
 				log.Error("server.ret:%s", err.Error())

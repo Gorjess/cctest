@@ -1,7 +1,6 @@
 package log
 
 import (
-	"cloudcadetest/conf"
 	"errors"
 	"fmt"
 	"io"
@@ -10,7 +9,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -47,7 +45,6 @@ type Logger struct {
 	enableStdOut bool
 	newFileTime  time.Time
 	errToSkipMap map[string]struct{}
-	mu           sync.RWMutex
 }
 
 func redirectError(fmat string, args ...interface{}) {
@@ -92,7 +89,6 @@ func New(strLevel string, pathname string, fileName string, chNum int, rollSize 
 
 	go logger.doLogTask()
 
-	logger.SetSkipErrors(conf.ErrToSkip)
 	return logger, nil
 }
 
@@ -104,17 +100,6 @@ func (logger *Logger) CloseFile() {
 		}
 		logger.baseFile = nil
 	}
-}
-
-func (logger *Logger) SetSkipErrors(errList []string) {
-	m := make(map[string]struct{}, len(errList))
-	for i := range errList {
-		m[errList[i]] = struct{}{}
-	}
-
-	logger.mu.Lock()
-	logger.errToSkipMap = m
-	logger.mu.Unlock()
 }
 
 func (logger *Logger) SetLoglevel(strLevel string) {
@@ -221,7 +206,7 @@ func (logger *Logger) Fatal(format string, a ...interface{}) {
 	logger.doPrintf(FatalLevel, printFatalLevel, format, a...)
 }
 
-var gLogger, _ = New("release", "", "", conf.LogChanNum, 50)
+var gLogger, _ = New("release", "", "", 100000, 50)
 
 func Export(logger *Logger) {
 	if logger != nil {
