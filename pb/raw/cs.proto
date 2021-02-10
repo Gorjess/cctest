@@ -31,15 +31,16 @@ message CSHead {
 
 message CSReqBody {
   int64          Seq       = 1;
-  CSReqLogin     ReqLogin  = 2;
+  CSReqLogin     Login     = 2;
   CSReqHeartbeat Heartbeat = 3;
 }
 
 message CSRspBody {
   int64          Seq       = 1;
   ERROR_CODE     ErrCode   = 2;
-  CSRspLogin     RspLogin  = 3;
-  CSRspHeartbeat Heartbeat = 4;
+  string         ErrMsg    = 3;
+  CSRspLogin     Login     = 4;
+  CSRspHeartbeat Heartbeat = 5;
 }
 
 message CSNtfBody {

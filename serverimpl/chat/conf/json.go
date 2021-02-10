@@ -1,9 +1,10 @@
 package conf
 
 import (
-	"cloudcadetest/framework/log"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 type ServerCfg struct {
@@ -18,14 +19,14 @@ var Server *ServerCfg
 
 func Load() {
 	Server = new(ServerCfg)
-	bs, e := ioutil.ReadFile("./config.json")
+	fmt.Println(os.Getwd())
+	bs, e := ioutil.ReadFile("serverimpl/chat/config.json")
 	if e != nil {
-		log.Error("read gate config failed:%s", e.Error())
-		return
+		panic(fmt.Sprintf("read gate config failed:%s", e.Error()))
 	}
 
 	e = json.Unmarshal(bs, Server)
 	if e != nil {
-		log.Error("unmarshal gate config failed:%s", e.Error())
+		panic(fmt.Sprintf("unmarshal gate config failed:%s", e.Error()))
 	}
 }
