@@ -84,6 +84,7 @@ func (tcpConn *TCPConn) RemoteAddr() net.Addr {
 }
 
 func (tcpConn *TCPConn) WriteTask() {
+	log.Release("tcp write task started")
 	for b := range tcpConn.writeChan {
 		n, err := tcpConn.conn.Write(b)
 		if err != nil {

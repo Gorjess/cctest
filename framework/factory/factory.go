@@ -4,7 +4,6 @@ import (
 	"cloudcadetest/framework/factory/platform"
 	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/module"
-	"cloudcadetest/framework/rpc"
 	"cloudcadetest/modconf"
 	"fmt"
 	"math/rand"
@@ -14,11 +13,10 @@ import (
 )
 
 type CServer struct {
-	cfg     *modconf.ServerConf
-	logger  *log.Logger
-	stopped bool
-
-	serverMod *module.ServerMod
+	cfg       *modconf.ServerConf
+	Logger    *log.Logger
+	stopped   bool
+	ServerMod *module.ServerMod
 }
 
 func New(sc *modconf.ServerConf) *CServer {
@@ -28,24 +26,13 @@ func New(sc *modconf.ServerConf) *CServer {
 
 	return &CServer{
 		cfg:     sc,
-		logger:  nil,
+		Logger:  nil,
 		stopped: false,
-		serverMod: &module.ServerMod{
-			GoLen:               2048,
-			TimerDispatcherLen:  2048,
-			RPCServer:           rpc.NewServer(1000, 0),
-			FuncGetExecTimeOut: func() int32 {
-				return 10
-			},
-			FuncGetBlockTimeOut: func() int32 {
-				return 10
-			},
-		},
 	}
 }
 
 func (s *CServer) GetEntity() *module.ServerMod {
-	return s.serverMod
+	return s.ServerMod
 }
 
 func (s *CServer) Run(mods []module.IModule) {
@@ -72,17 +59,17 @@ func (s *CServer) Run(mods []module.IModule) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	// logger
+	// Logger
 	if s.cfg.LogLevel != "" {
 		var err error
-		s.logger, err = log.New(s.cfg.LogLevel, s.cfg.LogPath, s.cfg.LogFileName, s.cfg.LogChanNum, s.cfg.RollSize)
+		s.Logger, err = log.New(s.cfg.LogLevel, s.cfg.LogPath, s.cfg.LogFileName, s.cfg.LogChanNum, s.cfg.RollSize)
 		if err != nil {
 			panic(err)
 		}
 
-		s.logger.EnableStdOut(s.cfg.EnableStdOut)
+		s.Logger.EnableStdOut(s.cfg.EnableStdOut)
 
-		log.Export(s.logger)
+		log.Export(s.Logger)
 		defer log.Close()
 	}
 

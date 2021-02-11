@@ -1,4 +1,4 @@
-package agentmgr
+package game
 
 import (
 	"sync"

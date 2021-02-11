@@ -7,6 +7,7 @@ import (
 )
 
 type IModule interface {
+	OnInit()
 	OnDestroy()
 	Run(closeSig chan bool)
 }
@@ -38,6 +39,7 @@ func Destroy() {
 
 func Run(mod IModule) {
 	m := register(mod)
+	mod.OnInit()
 
 	go func() {
 		m.wg.Add(1)

@@ -2,20 +2,22 @@ package game
 
 import (
 	"cloudcadetest/common/uuid"
-	"cloudcadetest/framework/factory"
+	"cloudcadetest/framework/module"
 	"cloudcadetest/framework/msg/cs"
-	"cloudcadetest/serverimpl/chat/game/roommgr"
 )
 
 var (
-	Server      *factory.CServer
+	SM          *module.ServerMod
 	CSProcessor *cs.Processor
 	UUID        *uuid.UUID
-	RoomMgr     *roommgr.Manager
+	RoomMgr     *Manager
 )
 
-func Init() {
-	CSProcessor = cs.New(Server.GetEntity(), true, 10000, 1024, false)
+func Init(sm *module.ServerMod) {
+	SM = sm
+	CSProcessor = cs.New(sm, true, 10000, 1024, false)
 	UUID = &uuid.UUID{}
-	RoomMgr = roommgr.New()
+	RoomMgr = NewRoomMgr()
+
+	registerHandler()
 }

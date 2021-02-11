@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"sync/atomic"
-	"time"
 )
 
 // one server per goroutine (goroutine not safe)
@@ -20,11 +18,6 @@ type Server struct {
 	// func(args []interface{}) []interface{}
 	functions          map[interface{}]interface{}
 	ChanCall           chan *CallInfo
-	FuncGetExecTimeOut func() int32
-	ClearChanCallFlag  uint32
-	LastFullChanTime   int64
-	enableFailFast     uint32
-	warnFull           uint32
 }
 
 type CallInfo struct {
@@ -59,13 +52,10 @@ type Client struct {
 	pendingAsynCall int
 }
 
-func NewServer(l int, enableFailFast uint32) *Server {
+func NewServer(l int) *Server {
 	s := new(Server)
 	s.functions = make(map[interface{}]interface{})
 	s.ChanCall = make(chan *CallInfo, l)
-	atomic.StoreUint32(&s.enableFailFast, enableFailFast)
-	nowUnix := time.Now().Unix()
-	atomic.StoreInt64(&s.LastFullChanTime, nowUnix)
 	return s
 }
 
@@ -114,18 +104,7 @@ func doRecover(r interface{}) {
 }
 
 func (s *Server) Exec(ci *CallInfo) (err error) {
-	start := time.Now()
 	defer func() {
-		if s.FuncGetExecTimeOut != nil {
-			timeOut := s.FuncGetExecTimeOut()
-			if timeOut > 0 {
-				dt := time.Since(start)
-				if dt >= time.Duration(timeOut)*time.Millisecond {
-					log.Warn("call info ddchess timeout f:%v t:%v", ci.id, dt)
-				}
-			}
-		}
-
 		if r := recover(); r != nil {
 			doRecover(r)
 			err = s.ret(ci, &RetInfo{err: fmt.Errorf("%v", r)})
@@ -156,33 +135,6 @@ func (s *Server) Exec(ci *CallInfo) (err error) {
 	}
 }
 
-func (s *Server) CheckFailFast() {
-	if atomic.LoadUint32(&s.enableFailFast) == 0 {
-		return
-	}
-
-	nowUnix := time.Now().Unix()
-	chanCallCap := len(s.ChanCall)
-
-	if nowUnix-atomic.LoadInt64(&s.LastFullChanTime) >= 30 {
-		log.Error("FailFast")
-		atomic.StoreUint32(&s.ClearChanCallFlag, 1)
-		for i := 0; i < chanCallCap; i++ {
-			select {
-			case <-s.ChanCall:
-			default:
-				break
-			}
-		}
-
-		log.Error("FailFast Over")
-
-		atomic.StoreInt64(&s.LastFullChanTime, nowUnix)
-		atomic.StoreUint32(&s.ClearChanCallFlag, 0)
-		atomic.StoreUint32(&s.warnFull, 0)
-	}
-}
-
 func (s *Server) AddChanCall(callInfo *CallInfo) {
 	if callInfo == nil {
 		return
@@ -204,10 +156,6 @@ func (s *Server) Go(id interface{}, args ...interface{}) {
 		return
 	}
 
-	if atomic.LoadUint32(&s.enableFailFast) != 0 && atomic.LoadUint32(&s.ClearChanCallFlag) != 0 {
-		return
-	}
-
 	defer func() {
 		if r := recover(); r != nil {
 			buf := make([]byte, 1<<20)
@@ -215,29 +163,6 @@ func (s *Server) Go(id interface{}, args ...interface{}) {
 			log.Error("%v: %s", r, buf[:l])
 		}
 	}()
-
-	nowUnix := time.Now().Unix()
-
-	if atomic.LoadUint32(&s.enableFailFast) != 0 && atomic.LoadUint32(&s.warnFull) != 0 {
-		s.CheckFailFast()
-	}
-
-	ChanCallCap := cap(s.ChanCall)
-	ChanCallLen := len(s.ChanCall)
-	if ChanCallCap == ChanCallLen {
-		log.Error("RPC ChanCall is full!!!!")
-		if atomic.LoadUint32(&s.enableFailFast) != 0 && atomic.LoadUint32(&s.warnFull) == 0 {
-			atomic.StoreInt64(&s.LastFullChanTime, nowUnix)
-			atomic.StoreUint32(&s.warnFull, 1)
-		}
-		return
-	}
-
-	if atomic.LoadUint32(&s.enableFailFast) != 0 {
-		if ChanCallLen < int(float64(ChanCallCap)*0.9) {
-			atomic.StoreUint32(&s.warnFull, 0)
-		}
-	}
 
 	s.AddChanCall(&CallInfo{
 		id:   id,

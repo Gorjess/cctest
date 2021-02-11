@@ -1,57 +1,30 @@
 package self
 
 import (
-	"cloudcadetest/framework/agent"
 	"cloudcadetest/framework/log"
-	"cloudcadetest/framework/network"
-	"cloudcadetest/serverimpl/chat/conf"
+	"cloudcadetest/framework/module"
+	"cloudcadetest/framework/rpc"
+	"cloudcadetest/serverimpl/chat/game"
 )
 
-type NewAgentFunc func(*network.TCPConn) agent.Agent
+var Mod = new(mod)
 
-type Gate struct {
-	TCPAddr          string
-	FuncMaxConnNum   func() int
-	PendingWriteNum  int
-	ConnNumPerSecond int32 // 每秒限定的连接数
-	NewAgent         NewAgentFunc
-	tcpServer        *network.TCPServer
+type mod struct {
+	*module.ServerMod
 }
 
-func New(newAgent NewAgentFunc) *Gate {
-	return &Gate{
-		TCPAddr:          "0.0.0.0:3066",
-		FuncMaxConnNum:   func() int { return conf.Server.MaxConnNum },
-		PendingWriteNum:  conf.Server.GatePendingWriteNum,
-		ConnNumPerSecond: conf.Server.ConnNumPerSecond,
-		NewAgent:         newAgent,
+func (m *mod) OnInit() {
+	sm := &module.ServerMod{
+		GoLen:              10000,
+		TimerDispatcherLen: 10000,
+		RPCServer:          rpc.NewServer(10000),
 	}
+	sm.Init()
+	Mod.ServerMod = sm
+
+	game.Init(sm)
 }
 
-func (gate *Gate) Run(closeSig chan bool) {
-	log.Release("starting gate module %s", gate.TCPAddr)
-	if gate.TCPAddr != "" {
-		gate.tcpServer = new(network.TCPServer)
-		gate.tcpServer.Addr = gate.TCPAddr
-		gate.tcpServer.FuncMaxConnNum = gate.FuncMaxConnNum
-		gate.tcpServer.PendingWriteNum = gate.PendingWriteNum
-		gate.tcpServer.NewAgent = gate.NewAgent
-		gate.tcpServer.ConnNumberPerSecond = gate.ConnNumPerSecond
-		gate.tcpServer.Start()
-	}
-
-	<-closeSig
-}
-
-func (gate *Gate) OnDestroy() {
-	if gate.tcpServer != nil {
-		gate.tcpServer.Close()
-	}
-	log.Release("gate destroyed")
-}
-
-func (gate *Gate) CloseTCPServer() {
-	if gate.tcpServer != nil {
-		gate.tcpServer.Close()
-	}
+func (m *mod) OnDestroy() {
+	log.Release("chat module destroyed")
 }

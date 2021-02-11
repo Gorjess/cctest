@@ -20,11 +20,9 @@ type ServerMod struct {
 	RPCServer           *rpc.Server
 	dispatcher          *timer.Dispatcher
 	server              *rpc.Server
-	FuncGetExecTimeOut  func() int32
-	FuncGetBlockTimeOut func() int32
 }
 
-func (sm *ServerMod) Init(funcGetRpcExecTimeOut func() int32, funcGetBlockTimeOut func() int32) {
+func (sm *ServerMod) Init() {
 	if sm.GoLen <= 0 {
 		sm.GoLen = 0
 	}
@@ -34,13 +32,8 @@ func (sm *ServerMod) Init(funcGetRpcExecTimeOut func() int32, funcGetBlockTimeOu
 
 	sm.dispatcher = timer.NewDispatcher(sm.TimerDispatcherLen)
 	sm.server = sm.RPCServer
-	sm.FuncGetExecTimeOut = funcGetRpcExecTimeOut
-	sm.FuncGetBlockTimeOut = funcGetBlockTimeOut
-	if sm.RPCServer != nil {
-		sm.RPCServer.FuncGetExecTimeOut = funcGetRpcExecTimeOut
-	}
 	if sm.server == nil {
-		sm.server = rpc.NewServer(0, 0)
+		sm.server = rpc.NewServer(0)
 	}
 }
 
@@ -49,18 +42,7 @@ func (sm *ServerMod) runTimer(t *timer.Timer) {
 		return
 	}
 
-	start := time.Now()
 	defer func() {
-		if sm.FuncGetExecTimeOut != nil {
-			timeOut := sm.FuncGetExecTimeOut()
-			if timeOut > 0 {
-				dt := time.Since(start)
-				if dt >= time.Duration(timeOut)*time.Millisecond {
-					log.Warn("call info ddchess timeout f:%v t:%v", t.Name, dt)
-				}
-			}
-		}
-
 		if r := recover(); r != nil {
 			dumpRecover(r)
 		}
@@ -97,19 +79,7 @@ func dumpRecover(r interface{}) {
 }
 
 func (sm *ServerMod) runChanCB(f func()) {
-	start := time.Now()
-
 	defer func() {
-		if sm.FuncGetExecTimeOut != nil {
-			timeOut := sm.FuncGetExecTimeOut()
-			if timeOut > 0 {
-				dt := time.Since(start)
-				if dt >= time.Duration(timeOut)*time.Millisecond {
-					log.Warn("sm.runChanCB timeout, f:%v t:%sm", GetFunctionName(f), dt)
-				}
-			}
-		}
-
 		if r := recover(); r != nil {
 			dumpRecover(r)
 		}
@@ -125,11 +95,7 @@ func (sm *ServerMod) runFunc(info interface{}, f func()) {
 		return
 	}
 
-	timeout := 10
-	if sm.FuncGetBlockTimeOut != nil {
-		timeout = int(sm.FuncGetBlockTimeOut())
-	}
-
+	timeout := 1000
 	ctx, _ := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	ch := make(chan int, 3)
 

@@ -7,12 +7,12 @@ import (
 	"cloudcadetest/modconf"
 	"cloudcadetest/serverimpl/chat/conf"
 	"cloudcadetest/serverimpl/chat/game"
-	"cloudcadetest/serverimpl/chat/game/entity/player"
+	"cloudcadetest/serverimpl/chat/mods/playergate"
 	"cloudcadetest/serverimpl/chat/mods/self"
 )
 
 func main() {
-	game.Server = factory.New(&modconf.ServerConf{
+	s := factory.New(&modconf.ServerConf{
 		LenStackBuf:  4096,
 		LogLevel:     "release",
 		LogPath:      platform.GetLogRootPath(),
@@ -22,7 +22,10 @@ func main() {
 		EnableStdOut: false,
 	})
 
-	game.Server.Run([]module.IModule{self.New(player.New)})
+	s.Run([]module.IModule{
+		playergate.New(game.NewPlayer),
+		self.Mod,
+	})
 }
 
 func init() {

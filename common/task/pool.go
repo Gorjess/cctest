@@ -2,6 +2,7 @@ package task
 
 import (
 	"cloudcadetest/framework/log"
+	"cloudcadetest/framework/module"
 	"hash/fnv"
 	"runtime"
 	"strconv"
@@ -16,7 +17,8 @@ type taskFuncPair struct {
 
 // 更新任务
 type UpdateTask struct {
-	t chan *taskFuncPair
+	t  chan *taskFuncPair
+	sm *module.ServerMod
 }
 
 type Pool struct {
@@ -36,7 +38,7 @@ var (
 	taskConsumed = uint32(0)
 )
 
-func NewTaskPool(taskNum, chanNum int) *Pool {
+func NewTaskPool(sm *module.ServerMod, taskNum, chanNum int) *Pool {
 	pool := &Pool{
 		Tasks: []*UpdateTask{},
 	}
@@ -51,7 +53,10 @@ func NewTaskPool(taskNum, chanNum int) *Pool {
 
 	pool.chanNum = chanNum
 	for i := 0; i < taskNum; i++ {
-		task := &UpdateTask{t: make(chan *taskFuncPair, chanNum)}
+		task := &UpdateTask{
+			t:  make(chan *taskFuncPair, chanNum),
+			sm: sm,
+		}
 
 		pool.Tasks = append(pool.Tasks, task)
 
@@ -156,7 +161,7 @@ func (t *UpdateTask) executeFun(pair *taskFuncPair) {
 	}
 
 	if pair.cb != nil {
-		pair.cb()
+		t.sm.RunInSkeleton("task.cb", pair.cb)
 	}
 }
 
