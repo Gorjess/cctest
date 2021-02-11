@@ -32,6 +32,6 @@ go build client.go
   * 玩家姓名的过滤交由全局唯一的房间管理器完成  
   
 # 性能数据
-https://github.com/Gorjess/cctest/blob/master/profile.png
+![image](https://github.com/Gorjess/cctest/blob/master/profile.png)
   
   
