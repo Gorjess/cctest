@@ -142,7 +142,7 @@ func (m *Manager) RoomChat(playerFD, roomID int64, content string) {
 		content = m.execGM(r, content[1:])
 		r.broadcast(-1, content)
 	} else {
-		m.filter.Check(content, func(newStr string) {
+		r.filter.Check(content, func(newStr string) {
 			r.AddMsg(newStr)
 			r.broadcast(playerFD, newStr)
 		})
