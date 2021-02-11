@@ -20,7 +20,7 @@ var Server *ServerCfg
 func Load() {
 	Server = new(ServerCfg)
 	fmt.Println(os.Getwd())
-	bs, e := ioutil.ReadFile("serverimpl/chat/conf/config.json")
+	bs, e := ioutil.ReadFile("conf/config.json")
 	if e != nil {
 		panic(fmt.Sprintf("read gate config failed:%s", e.Error()))
 	}
