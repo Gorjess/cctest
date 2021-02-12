@@ -53,7 +53,7 @@ go build client.go
   * 玩家姓名的过滤交由全局唯一的房间管理器完成 
   
 ## 测试框架
-gotest 
+[gotest](https://github.com/cweill/gotests)
   
 ## 性能数据
 ![image](https://github.com/Gorjess/cctest/blob/master/profile.png)
