@@ -10,9 +10,12 @@ cd serverimpl/chat
 go build main.go
 ./main
 ```
+日志路径
+  * windows: D:\\service
+  * unix: /tmp/service
 
 ### 客户端
-切换到项目根目录
+切换到项目根目录后
 ```bash
 cd client
 go build client.go
@@ -24,6 +27,8 @@ go build client.go
   * 优点：完善的编解码、跨语言特性
   * 缺点：内存消耗较大，大量的反射对CPU消耗较高，是目前项目中的性能瓶颈
 * C/S结构，聊天服务器可横向扩展
+* 目前没有做网关服，但聊天服本身支持流量限制，可配置单位之间最大链接数量
+  * serverimpl/chat/conf/config.json 中的 conn_num_per_second
 
 ## 如何扩展
 * 在玩家与聊天服之间加入一组网关服
@@ -42,10 +47,13 @@ go build client.go
   * 藉由DFA判断敏感词，并替换其中的敏感字段
 * 并发模型  
   * 每个房间两个协程
-    * 处理该房间内成员的聊天消息
-    * 过滤并替换敏感词
+    * 协程1：处理该房间内成员的聊天消息
+    * 协程2：过滤并替换敏感词
   * 每个玩家的读写任务在单独的协程中处理
-  * 玩家姓名的过滤交由全局唯一的房间管理器完成  
+  * 玩家姓名的过滤交由全局唯一的房间管理器完成 
+  
+## 测试框架
+gotest 
   
 ## 性能数据
 ![image](https://github.com/Gorjess/cctest/blob/master/profile.png)

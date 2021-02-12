@@ -7,8 +7,8 @@ import (
 	"cloudcadetest/modconf"
 	"cloudcadetest/serverimpl/chat/conf"
 	"cloudcadetest/serverimpl/chat/game"
-	"cloudcadetest/serverimpl/chat/mods/playergate"
-	"cloudcadetest/serverimpl/chat/mods/self"
+	"cloudcadetest/serverimpl/chat/modules/playergate"
+	"cloudcadetest/serverimpl/chat/modules/self"
 )
 
 func main() {
