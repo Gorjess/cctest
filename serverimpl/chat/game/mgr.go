@@ -267,6 +267,20 @@ func (m *Manager) Chat(p *Agent, chat *pb.CSReqChat) error {
 		return errors.New("not in one same room")
 	}
 
+	r := m.rooms[p.roomID]
+	if r == nil {
+		return errors.New("room entity not found")
+	}
+
+	m.AddRoomTask(p.roomID, func() {
+		r.filter.Check(chat.Content, func(newStr string) {
+			otherp.SendClient(pb.CSMsgID_NTF_CHAT, &pb.CSNtfBody{Chat: &pb.CSNtfChat{
+				From:    p.username,
+				Content: newStr,
+			}}, nil)
+		})
+	}, nil)
+
 	otherp.SendClient(pb.CSMsgID_NTF_CHAT, &pb.CSNtfBody{Chat: &pb.CSNtfChat{
 		From:    p.username,
 		Content: chat.Content,

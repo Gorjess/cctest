@@ -2,6 +2,7 @@ package wordfilter
 
 import (
 	"cloudcadetest/common/task"
+	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/module"
 	"strconv"
 )
@@ -25,8 +26,9 @@ func New(sm *module.ServerMod, id int64) *Filter {
 }
 
 func (f *Filter) check(content string) string {
-	return content
-	//return f.trieNode.Replace(content)
+	//return content.
+	log.Release("content:%s, passed%t", content, f.trieNode.HasDirty(content))
+	return f.trieNode.Replace(content)
 }
 
 func (f *Filter) Check(content string, onFinish func(newStr string)) {

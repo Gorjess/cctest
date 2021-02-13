@@ -48,7 +48,7 @@ func (t *Trie) InsertFile(path string) {
 		if err != nil {
 			break
 		}
-		t.insert(s)
+		t.insert(s[:len(s)-1])
 	}
 }
 
