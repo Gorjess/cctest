@@ -10,7 +10,7 @@ import (
 	"cloudcadetest/serverimpl/chat/conf"
 	"errors"
 	"fmt"
-	"google.golang.org/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"time"
 )
 
@@ -74,7 +74,7 @@ func (p *Agent) IsDestroyed() bool {
 	return p.destroyed
 }
 
-func (p *Agent) UpdateActiveTime(t time.Time) {
+func (p *Agent) updateActiveTS(t time.Time) {
 	p.activeTime = t
 }
 
@@ -186,6 +186,8 @@ func (p *Agent) SendClient(id pb.CSMsgID, message interface{}, onFinish func(err
 			}
 		}, nil,
 	)
+
+	log.Release("pending task:%s, %s", p.username, id)
 
 	if ret < 0 {
 		p.LogError("add cs msg failed, ret:%d, msg:%s", ret, id)

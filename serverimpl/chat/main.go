@@ -8,12 +8,23 @@ import (
 	"cloudcadetest/serverimpl/chat/game"
 	"cloudcadetest/serverimpl/chat/modules/playergate"
 	"cloudcadetest/serverimpl/chat/modules/self"
+	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var InstallAt string
 
 func main() {
-	println("install at:", InstallAt)
+	if InstallAt == "" {
+		InstallAt = "./"
+	}
+	println("chatserver installed at:", InstallAt)
+
+	go func() {
+		fmt.Println(http.ListenAndServe("localhost:1108", nil))
+	}()
+
 	s := factory.New(&modconf.ServerConf{
 		LenStackBuf:  4096,
 		LogLevel:     "release",

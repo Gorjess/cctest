@@ -32,40 +32,39 @@ func checkPlayer(arg interface{}) *Agent {
 }
 
 func handleCS(args []interface{}) {
-	//player
 	p := checkPlayer(args[0])
 	if p == nil {
 		return
 	}
 
-	// id
 	reqId, ok := args[1].(pb.CSMsgID)
 	if !ok {
 		log.Error("invalid find req id")
 		return
 	}
 
-	// Req 消息
+	if reqId == pb.CSMsgID_REQ_JOIN_ROOM {
+		log.Release("p:%s join room", p.username)
+	}
+
 	req, ok := args[2].(*pb.CSReqBody)
 	if !ok {
 		log.Error("invalid req msg")
 		return
 	}
 
-	//处理函数
 	f, ok := functions[reqId]
 	if !ok {
-		log.Error("cb not found, player[%d] reqId[%s]", p.GetFD(), reqId)
+		log.Error("nil cb, player[%d] reqId[%s]", p.GetFD(), reqId)
 		return
 	}
 
-	//执行
 	rsp := &pb.CSRspBody{
 		Seq: req.Seq,
 	}
 	f(p, req, rsp)
 
-	p.UpdateActiveTime(time.Now())
+	p.updateActiveTS(time.Now())
 }
 
 func registerHandler() {

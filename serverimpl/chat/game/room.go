@@ -5,6 +5,7 @@ import (
 	"cloudcadetest/framework/log"
 	"cloudcadetest/pb"
 	"container/list"
+	"time"
 )
 
 type Room struct {
@@ -24,7 +25,7 @@ func NewRoom(id int64) *Room {
 	}
 }
 
-func (r *Room) AddMsg(msg string) int {
+func (r *Room) AddMsg(fromUsername, msg string) int {
 	msgCnt := r.historyMsgs.Len()
 	// 超过上限，移除最早的一条消息
 	if msgCnt >= 50 {
@@ -33,7 +34,11 @@ func (r *Room) AddMsg(msg string) int {
 		msgCnt -= 1
 	}
 
-	r.historyMsgs.PushBack(msg)
+	r.historyMsgs.PushBack(&pb.HistoryChat{
+		From:    fromUsername,
+		Content: msg,
+		Dt:      time.Now().String(),
+	})
 	return msgCnt + 1
 }
 
@@ -94,6 +99,8 @@ func (r *Room) broadcast(playerFD int64, content string) {
 				er = CSProcessor.Write2Socket(mem.GetConn(), msgID, compressedData, isCompressed, p.GetEncKey())
 				if er != nil {
 					log.Error("broadcast failed, room:%d, msg:%s, p:%d", r.id, msgID, fd)
+				} else {
+					log.Release("send %s to client:%s, msg:%s, compressed:%t", msgID, mem.username, csNtf, isCompressed)
 				}
 			}
 		}, nil,

@@ -3,9 +3,8 @@ package protobuf
 import (
 	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/rpc"
-	"google.golang.org/protobuf/proto"
-
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"time"
 )
 

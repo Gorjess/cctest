@@ -172,6 +172,9 @@ func (logger *Logger) doPrintf(level int, printLevel string, format string, a ..
 	if level >= ErrorLevel {
 		format += callStack()
 	}
+
+	fmt.Println(format)
+
 	select {
 	case logger.ch <- format:
 	default:

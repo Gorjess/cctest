@@ -140,8 +140,14 @@ message CSNtfRoomClosed {
 
 }
 
+message HistoryChat {
+  string from = 1;
+  string dt   = 2;
+  string content = 3;
+}
+
 message CSNtfHistoryMsg {
-  repeated string History = 1;
+  repeated HistoryChat History = 1;
 }
 
 

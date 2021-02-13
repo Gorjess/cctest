@@ -26,10 +26,11 @@ func newTCPConn(conn net.Conn, pendingWriteNum int) *TCPConn {
 }
 
 func (tcpConn *TCPConn) Destroy() {
-	e := tcpConn.conn.(*net.TCPConn).SetLinger(lingerSecs)
-	if e != nil {
-		log.Error("set linger seconds failed:%s", e.Error())
-	}
+	var e error
+	//e = tcpConn.conn.(*net.TCPConn).SetLinger(lingerSecs)
+	//if e != nil {
+	//	log.Error("set linger seconds failed:%s", e.Error())
+	//}
 
 	time.Sleep(time.Second * 3)
 
@@ -84,15 +85,12 @@ func (tcpConn *TCPConn) RemoteAddr() net.Addr {
 }
 
 func (tcpConn *TCPConn) WriteTask() {
-	log.Release("tcp write task started")
 	for b := range tcpConn.writeChan {
-		n, err := tcpConn.conn.Write(b)
+		_, err := tcpConn.conn.Write(b)
 		if err != nil {
 			log.Warn("tcpconn write fail[%s]", err.Error())
 			continue
 		}
-
-		log.Release("tcp write to %s [%d-%d]", tcpConn.conn.RemoteAddr(), len(b), n)
 	}
 
 	tcpConn.Destroy()

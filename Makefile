@@ -11,7 +11,7 @@ ifeq ($(OS),Windows_NT)
     INSTALL_TOP=D:/sevice
 else
     TARGET_OS=$(shell uname)
-    INSTALL_TOP=/usr/local/service
+    INSTALL_TOP=/usr/local/chatservice
 endif
 
 build:
@@ -20,7 +20,9 @@ build:
 
 install:
 	@mkdir -p $(INSTALL_TOP)
-	@cd $(CHAT_ROOT) && cp $(BINARY) conf/*.json $(INSTALL_TOP)
+	@mkdir -p $(INSTALL_TOP)/conf
+	@cp $(CHAT_ROOT)/$(BINARY) $(INSTALL_TOP)
+	@cp $(CHAT_ROOT)/conf/*.json $(INSTALL_TOP)
 	@echo "finish installing"
 
 run:

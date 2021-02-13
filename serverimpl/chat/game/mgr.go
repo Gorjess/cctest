@@ -2,13 +2,13 @@ package game
 
 import (
 	"cloudcadetest/common/task"
-	"cloudcadetest/common/uuid"
 	"cloudcadetest/common/wordfilter"
 	"cloudcadetest/framework/log"
 	"cloudcadetest/pb"
 	"container/list"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -16,7 +16,7 @@ import (
 
 type Manager struct {
 	taskPool      *task.Pool
-	uuid          *uuid.UUID
+	roomIDBase    int64
 	rooms         map[int64]*Room
 	validRooms    *list.List
 	players       map[int64]*Agent
@@ -28,14 +28,22 @@ type Manager struct {
 func NewRoomMgr() *Manager {
 	return &Manager{
 		taskPool:      task.NewTaskPool(SM, 0, 0),
-		uuid:          &uuid.UUID{},
+		roomIDBase:    0,
 		rooms:         map[int64]*Room{},
 		names:         map[string]struct{}{},
 		players:       map[int64]*Agent{},
 		playersByName: map[string]*Agent{},
 		validRooms:    list.New(),
-		filter: wordfilter.New(SM, 1),
+		filter:        wordfilter.New(SM, 1),
 	}
+}
+
+func (m *Manager) newTid() int64 {
+	if m.roomIDBase == math.MaxInt64 {
+		m.roomIDBase = 0
+	}
+	m.roomIDBase++
+	return m.roomIDBase
 }
 
 type RoomState int
@@ -52,7 +60,7 @@ func (m *Manager) push(r *Room) {
 }
 
 func (m *Manager) AddRoom() *Room {
-	id := m.uuid.Get()
+	id := m.newTid()
 	r := NewRoom(id)
 	m.push(r)
 	m.rooms[id] = r
@@ -79,7 +87,7 @@ func (m *Manager) AddRoomTask(roomID int64, f, cb func()) int {
 
 func (m *Manager) Join(p *Agent, username string) (int64, error) {
 	if _, ok := m.names[username]; ok {
-		return -1, errors.New(fmt.Sprintf("duplicated name:%s, %v", username, m.names))
+		return -1, errors.New(fmt.Sprintf("duplicate name:%s, %v", username, m.names))
 	}
 
 	m.names[username] = struct{}{}
@@ -104,6 +112,9 @@ func (m *Manager) Join(p *Agent, username string) (int64, error) {
 	p.SetRoomID(r.id)
 	m.players[p.GetFD()] = p
 	m.playersByName[username] = p
+
+	// history messages
+	m.notifyHistoryMsgs(p.GetFD())
 
 	return r.id, nil
 }
@@ -143,7 +154,7 @@ func (m *Manager) RoomChat(playerFD, roomID int64, content string) {
 		r.broadcast(-1, content)
 	} else {
 		r.filter.Check(content, func(newStr string) {
-			r.AddMsg(newStr)
+			r.AddMsg(p.username, newStr)
 			r.broadcast(playerFD, newStr)
 		})
 	}
@@ -183,7 +194,7 @@ func (m *Manager) execGM(r *Room, cmd string) string {
 	return ""
 }
 
-func (m *Manager) NotifyHistoryMsgs(playerFD int64) {
+func (m *Manager) notifyHistoryMsgs(playerFD int64) {
 	p := m.players[playerFD]
 	if p == nil {
 		return
@@ -194,21 +205,20 @@ func (m *Manager) NotifyHistoryMsgs(playerFD int64) {
 	}
 
 	var (
-		ntfID = pb.CSMsgID_NTF_HISTROY_MSG
-		csNtf = &pb.CSNtfBody{HistoryMsg: &pb.CSNtfHistoryMsg{
-		}}
+		ntfID    = pb.CSMsgID_NTF_HISTROY_MSG
+		csNtf    = &pb.CSNtfBody{HistoryMsg: &pb.CSNtfHistoryMsg{}}
 		msgCount = r.historyMsgs.Len()
 	)
 
 	// 整合消息
-	csNtf.HistoryMsg.History = make([]string, msgCount)
+	csNtf.HistoryMsg.History = make([]*pb.HistoryChat, msgCount)
 	n := r.historyMsgs.Front()
 	if n == nil {
 		return
 	}
 	i := 0
 	for n := r.historyMsgs.Front(); n != nil; n = n.Next() {
-		csNtf.HistoryMsg.History[i] = n.Value.(string)
+		csNtf.HistoryMsg.History[i] = n.Value.(*pb.HistoryChat)
 		i++
 	}
 

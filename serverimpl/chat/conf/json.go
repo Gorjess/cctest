@@ -19,8 +19,9 @@ var Server *ServerCfg
 
 func Load() {
 	Server = new(ServerCfg)
-	fmt.Println(os.Getwd())
-	bs, e := ioutil.ReadFile("config.json")
+	cwd, _ := os.Getwd()
+	println("cwd:", cwd)
+	bs, e := ioutil.ReadFile("conf/config.json")
 	if e != nil {
 		panic(fmt.Sprintf("read gate config failed:%s", e.Error()))
 	}

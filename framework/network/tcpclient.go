@@ -81,7 +81,7 @@ func (client *TCPClient) connect() bool {
 	client.Unlock()
 
 	conn := newTCPConn(client.conn, client.PendingWriteNum)
-	client.NewAgent(conn) //回调逻辑里直接读数据，当读取失败，NewAgent才返回，上层逻辑会继续调用该connect函数(断线重连)
+	client.NewAgent(conn)
 
 	client.Lock()
 	defer client.Unlock()

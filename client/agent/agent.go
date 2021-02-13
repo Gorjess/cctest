@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"cloudcadetest/framework/agent"
-	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/network"
 	"cloudcadetest/framework/network/protobuf"
 	"cloudcadetest/pb"
@@ -25,45 +24,71 @@ func New() {
 	client.PendingWriteNum = 100
 	client.NewAgent = NewPlayer
 	client.DisconnectCB = func(s string) {
-		log.Warn("disconnected:%s", s)
+		pureLog("disconnected:%s", s)
 	}
 	client.Start()
+}
+
+type chat struct {
+	content string
+	from    string
+	ts      time.Time
 }
 
 type Player struct {
 	conn     network.IConn
 	proc     *protobuf.Processor
 	username string
+	chats    chan *chat
 }
 
 func NewPlayer(conn *network.TCPConn) agent.Agent {
+	printTitle()
+
 	p := &Player{
-		conn: conn,
-		proc: protobuf.NewProcessor(),
+		conn:  conn,
+		proc:  protobuf.NewProcessor(),
+		chats: make(chan *chat, 100),
 	}
 
 	go p.conn.WriteTask()
+	go p.handleChats()
 
-	// login
-	rand.Seed(time.Now().UnixNano())
-	p.send(pb.CSMsgID_REQ_LOGIN, &pb.CSReqBody{Login: &pb.CSReqLogin{
-		Username: "test_" + strconv.Itoa(rand.Intn(1000)),
-	}})
+	p.login()
 
 	p.readTask()
 
 	return p
 }
 
-func (p *Player) userInput(hint string, input chan string) {
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println(hint)
-	scanner.Scan()
-	input <- scanner.Text()
+func (p *Player) userInput(hint string, cb func(string)) {
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		fmt.Println(hint)
+		scanner.Scan()
+		cb(scanner.Text())
+	}()
+}
+
+func (p *Player) handleChats() {
+	for {
+		select {
+		case c := <-p.chats:
+			printChat(p.username, c.from, c.content, c.ts)
+		default:
+		}
+	}
+}
+
+func (p *Player) login() {
+	rand.Seed(time.Now().UnixNano())
+	p.send(pb.CSMsgID_REQ_LOGIN, &pb.CSReqBody{Login: &pb.CSReqLogin{
+		Username: "test_" + strconv.Itoa(rand.Intn(1000)),
+	}})
 }
 
 func (p *Player) OnClose(code uint) {
-	log.Release("player destroyed:%d", code)
+	pureLog("player destroyed:%d", code)
 	p.conn.Close()
 	os.Exit(-1)
 }
@@ -85,7 +110,7 @@ func (p *Player) readTask() {
 			}
 			err := proto.Unmarshal(bodyBuf, body)
 			if err != nil {
-				log.Error("DealMsg %s Unmarshal fail[%s]", msgID, err.Error())
+				pureLog("DealMsg %s Unmarshal fail[%s]", msgID, err.Error())
 				return false
 			}
 			router(msgID, p, body)
@@ -96,6 +121,8 @@ func (p *Player) readTask() {
 			break
 		}
 	}
+
+	//close(taskReady)
 
 	p.OnClose(uint(999))
 }
@@ -154,7 +181,7 @@ func dealMsg(conn network.IConn, recvBuffer *bytes.Buffer, onceBuffer []byte, ms
 		if h.BodyLen > 0 {
 			bodyBuf = make([]byte, h.BodyLen, h.BodyLen)
 			if copy(bodyBuf, data[int(hlen)+1:pktLen]) != int(h.BodyLen) { // 拷贝出错了
-				log.Release("copy err:%v", h)
+				pureLog("copy err:%v", h)
 				return errors.New("copy err")
 			}
 
@@ -178,8 +205,10 @@ func registerHandlers() {
 	callbacks[pb.CSMsgID_RSP_LOGIN] = rspLogin
 	callbacks[pb.CSMsgID_RSP_ROOM_LIST] = rspRoomList
 	callbacks[pb.CSMsgID_RSP_JOIN_ROOM] = rspJoinRoom
+	callbacks[pb.CSMsgID_RSP_ROOM_CHAT] = rspRoomChat
+
 	callbacks[pb.CSMsgID_NTF_ROOM_CHAT] = ntfRoomChat
-	//callbacks[pb.CSMsgID_NTF_HISTROY_MSG] = ntfHistoryMsgs
+	callbacks[pb.CSMsgID_NTF_HISTROY_MSG] = ntfHistoryMsgs
 }
 
 func router(id pb.CSMsgID, args ...interface{}) {
@@ -189,7 +218,7 @@ func router(id pb.CSMsgID, args ...interface{}) {
 	}
 
 	p := args[0].(*Player)
-	body := args[1].(proto.Message)
+	body := args[1]
 	cb(p, body)
 }
 
@@ -203,27 +232,16 @@ func rspLogin(p *Player, body interface{}) {
 	}
 
 	if rsp.ErrCode != pb.ERROR_CODE_SUCCESS {
-		log.Warn("login failed:%s", rsp.ErrMsg)
+		pureLog("login failed:%s", rsp.ErrMsg)
 		p.OnClose(1)
 	} else {
-		log.Release("finish logging in, room:%d", rsp.Login.RoomID)
 		p.username = rsp.Login.Username
 
-		time.Sleep(time.Second * 20)
-
-		p.send(pb.CSMsgID_REQ_ROOM_CHAT, &pb.CSReqBody{
-			RoomChat: &pb.CSReqRoomChat{Content: "hello"},
+		p.userInput("say something:", func(input string) {
+			p.send(pb.CSMsgID_REQ_ROOM_CHAT, &pb.CSReqBody{
+				RoomChat: &pb.CSReqRoomChat{Content: input},
+			})
 		})
-
-		//go func() {
-		//	sig := make(chan string, 1)
-		//	p.userInput("say hello to everyone:", sig)
-		//	content := <-sig
-		//
-		//	p.send(pb.CSMsgID_REQ_ROOM_CHAT, &pb.CSReqBody{
-		//		RoomChat: &pb.CSReqRoomChat{Content: content},
-		//	})
-		//}()
 	}
 }
 
@@ -237,28 +255,21 @@ func rspRoomList(p *Player, body interface{}) {
 	}
 
 	rooms := map[int64]struct{}{}
+	pureLog(`
+                 ROOMS(%d):
+--------------------------------------------`, len(rsp.RoomList.Rooms))
+
 	for _, room := range rsp.RoomList.Rooms {
-		fmt.Printf("Room[%d]--(%d/%d)", room.RoomID, room.CurrentMemberNum, room.TotalMemberNum)
+		pureLog("|%d| -- ( %d/%d )", room.RoomID, room.CurrentMemberNum, room.TotalMemberNum)
 		rooms[room.RoomID] = struct{}{}
 	}
 
-	go func() {
-		sig := make(chan string, 1)
-		p.userInput("Input a room no:", sig)
-		no, e := strconv.Atoi(<-sig)
-		if e != nil {
-			fmt.Println("invalid num")
-			return
-		}
-		if _, ok := rooms[int64(no)]; !ok {
-			fmt.Println("invalid num")
-			return
-		}
+	time.Sleep(time.Second * 2)
+	p.send(pb.CSMsgID_REQ_JOIN_ROOM, &pb.CSReqBody{
+		JoinRoom: &pb.CSReqJoinRoom{RoomID: int64(1)},
+	})
 
-		p.send(pb.CSMsgID_REQ_JOIN_ROOM, &pb.CSReqBody{
-			JoinRoom: &pb.CSReqJoinRoom{RoomID: int64(no)},
-		})
-	}()
+	return
 }
 
 func rspJoinRoom(p *Player, body interface{}) {
@@ -271,11 +282,22 @@ func rspJoinRoom(p *Player, body interface{}) {
 	}
 
 	if rsp.ErrCode != pb.ERROR_CODE_SUCCESS {
-		log.Warn("join room failed")
+		pureLog("join room failed:%s", rsp.ErrMsg)
 		return
 	}
 
-	log.Release("finish joining room")
+	pureLog("finish joining room")
+}
+
+func rspRoomChat(p *Player, body interface{}) {
+	rsp, ok := body.(*pb.CSRspBody)
+	if !ok {
+		return
+	}
+
+	if rsp.RoomChat == nil {
+		return
+	}
 }
 
 func ntfRoomChat(p *Player, body interface{}) {
@@ -286,17 +308,29 @@ func ntfRoomChat(p *Player, body interface{}) {
 	if ntf.RoomChat == nil {
 		return
 	}
-	un := ntf.RoomChat.Username
-	if un == p.username {
-		un = "You"
+	p.chats <- &chat{
+		content: ntf.RoomChat.Content,
+		from:    ntf.RoomChat.Username,
+		ts:      time.Now(),
 	}
-	log.Release("[%s] says: [%s]", un, ntf.RoomChat.Content)
+}
+
+func ntfHistoryMsgs(p *Player, body interface{}) {
+	ntf, ok := body.(*pb.CSNtfBody)
+	if !ok {
+		return
+	}
+
+	if ntf.HistoryMsg == nil {
+		return
+	}
+
 }
 
 func (p *Player) send(msgID pb.CSMsgID, body interface{}) {
 	bodyData, e := p.proc.Marshal([]interface{}{int32(msgID), body})
 	if e != nil {
-		log.Error(e.Error())
+		pureLog(e.Error())
 		return
 	}
 
@@ -310,7 +344,7 @@ func (p *Player) send(msgID pb.CSMsgID, body interface{}) {
 
 	headData, err := p.proc.Marshal([]interface{}{int32(msgID), h})
 	if err != nil {
-		log.Error("Marshal head error:" + err.Error())
+		pureLog("Marshal head error:" + err.Error())
 		return
 	}
 	headLen := int32(len(headData))
@@ -325,8 +359,6 @@ func (p *Player) send(msgID pb.CSMsgID, body interface{}) {
 
 	e = p.conn.Write(data)
 	if e != nil {
-		log.Error("write %s failed:%s", msgID, e.Error())
+		pureLog("write %s failed:%s", msgID, e.Error())
 	}
-
-	log.Release("send msg:[%s][%v]", msgID, body)
 }

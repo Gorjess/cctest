@@ -1,6 +1,7 @@
 package game
 
 import (
+	"cloudcadetest/framework/log"
 	"cloudcadetest/pb"
 )
 
@@ -23,8 +24,6 @@ func reqLogin(p *Agent, req *pb.CSReqBody, rsp *pb.CSRspBody) {
 	p.SetUsername(req.Login.Username)
 
 	p.SendClient(pb.CSMsgID_RSP_LOGIN, rsp, nil)
-
-	RoomMgr.NotifyHistoryMsgs(p.GetFD())
 }
 
 func reqHeartbeat(p *Agent, req *pb.CSReqBody, rsp *pb.CSRspBody) {
@@ -67,10 +66,13 @@ func reqJoinRoom(p *Agent, req *pb.CSReqBody, rsp *pb.CSRspBody) {
 		return
 	}
 
+	log.Release("player:%s join room", p.username)
+
 	rsp.JoinRoom = &pb.CSRspJoinRoom{}
 	if _, e := RoomMgr.Join(p, p.GetUsername()); e != nil {
 		rsp.ErrCode = pb.ERROR_CODE_FAILED
 		rsp.ErrMsg = e.Error()
 	}
+
 	p.SendClient(pb.CSMsgID_RSP_JOIN_ROOM, rsp, nil)
 }
