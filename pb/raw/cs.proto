@@ -128,7 +128,8 @@ message CSNtfKick {
 }
 
 message CSNtfRoomMemberOnline {
-
+  int64  RoomID   = 1;
+  string Username = 2;
 }
 
 message CSNtfRoomChat {
@@ -148,6 +149,7 @@ message HistoryChat {
 
 message CSNtfHistoryMsg {
   repeated HistoryChat History = 1;
+  int64                RoomID  = 2;
 }
 
 

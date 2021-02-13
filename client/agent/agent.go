@@ -74,7 +74,7 @@ func (p *Player) handleChats() {
 	for {
 		select {
 		case c := <-p.chats:
-			printChat(p.username, c.from, c.content, c.ts)
+			printChat(p.username, c.from, c.content, c.ts.Format("2006-01-02 15:04:05"))
 		default:
 		}
 	}
@@ -209,6 +209,7 @@ func registerHandlers() {
 
 	callbacks[pb.CSMsgID_NTF_ROOM_CHAT] = ntfRoomChat
 	callbacks[pb.CSMsgID_NTF_HISTROY_MSG] = ntfHistoryMsgs
+	callbacks[pb.CSMsgID_NTF_ROOM_MEMBER_ONLINE] = ntfRoomMemberOnline
 }
 
 func router(id pb.CSMsgID, args ...interface{}) {
@@ -325,6 +326,27 @@ func ntfHistoryMsgs(p *Player, body interface{}) {
 		return
 	}
 
+	pureLog("room[%d] msgs:", ntf.HistoryMsg.RoomID)
+	for _, hm := range ntf.HistoryMsg.History {
+		printChat(p.username, hm.From, hm.Content, hm.Dt)
+	}
+}
+
+func ntfRoomMemberOnline(p *Player, body interface{}) {
+	ntf, ok := body.(*pb.CSNtfBody)
+	if !ok {
+		return
+	}
+
+	if ntf.RoomMemberOnline == nil {
+		return
+	}
+
+	if ntf.RoomMemberOnline.Username == p.username {
+		pureLog("You joined room[%d]", ntf.RoomMemberOnline.RoomID)
+	} else {
+		pureLog("%s joined your room[%d]", ntf.RoomMemberOnline.Username, ntf.RoomMemberOnline.RoomID)
+	}
 }
 
 func (p *Player) send(msgID pb.CSMsgID, body interface{}) {

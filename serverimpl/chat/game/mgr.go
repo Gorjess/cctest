@@ -113,6 +113,11 @@ func (m *Manager) Join(p *Agent, username string) (int64, error) {
 	m.players[p.GetFD()] = p
 	m.playersByName[username] = p
 
+	r.broadcast(-1, pb.CSMsgID_NTF_ROOM_MEMBER_ONLINE, &pb.CSNtfBody{RoomMemberOnline: &pb.CSNtfRoomMemberOnline{
+		RoomID:   r.id,
+		Username: username,
+	}})
+
 	// history messages
 	m.notifyHistoryMsgs(p.GetFD())
 
@@ -151,11 +156,11 @@ func (m *Manager) RoomChat(playerFD, roomID int64, content string) {
 	// GM
 	if strings.Index(content, "/") == 0 {
 		content = m.execGM(r, content[1:])
-		r.broadcast(-1, content)
+		r.notifyRoomChat(-1, content)
 	} else {
 		r.filter.Check(content, func(newStr string) {
 			r.AddMsg(p.username, newStr)
-			r.broadcast(playerFD, newStr)
+			r.notifyRoomChat(playerFD, newStr)
 		})
 	}
 }

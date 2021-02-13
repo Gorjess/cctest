@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"time"
 )
 
 func printTitle() {
@@ -16,10 +15,10 @@ func pureLog(format string, args ...interface{}) {
 	fmt.Println()
 }
 
-func printChat(self, from, content string, ts time.Time) {
+func printChat(self, from, content string, ts string) {
 	sender := from
 	if self == from {
 		sender = "You"
 	}
-	fmt.Printf("[%s] %s said: %s\n", ts.Format("2006-01-02 15:04:05"), sender, content)
+	fmt.Printf("[%s] %s said: %s\n", ts, sender, content)
 }

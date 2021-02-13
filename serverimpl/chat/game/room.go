@@ -63,7 +63,7 @@ func (r *Room) Leave(playerFD int64) {
 	delete(r.members, playerFD)
 }
 
-func (r *Room) broadcast(playerFD int64, content string) {
+func (r *Room) notifyRoomChat(playerFD int64, content string) {
 	username := "N/A"
 	p := RoomMgr.players[playerFD]
 	if p != nil {
@@ -79,6 +79,11 @@ func (r *Room) broadcast(playerFD int64, content string) {
 			Content:  content,
 		}}
 	)
+
+	r.broadcast(-1, msgID, csNtf)
+}
+
+func (r *Room) broadcast(playerFD int64, msgID pb.CSMsgID, csNtf *pb.CSNtfBody) {
 	RoomMgr.AddRoomTask(
 		r.id,
 		func() {
@@ -89,14 +94,14 @@ func (r *Room) broadcast(playerFD int64, content string) {
 			}
 
 			for fd := range r.members {
-				//if fd == playerFD {
-				//	continue
-				//}
+				if fd == playerFD {
+					continue
+				}
 				mem := RoomMgr.players[fd]
 				if mem == nil {
 					continue
 				}
-				er = CSProcessor.Write2Socket(mem.GetConn(), msgID, compressedData, isCompressed, p.GetEncKey())
+				er = CSProcessor.Write2Socket(mem.GetConn(), msgID, compressedData, isCompressed, mem.GetEncKey())
 				if er != nil {
 					log.Error("broadcast failed, room:%d, msg:%s, p:%d", r.id, msgID, fd)
 				} else {
