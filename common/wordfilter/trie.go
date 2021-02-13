@@ -74,7 +74,7 @@ func (t *Trie) HasDirty(txt string) bool {
 	}
 	node := t.root
 	key := []rune(txt)
-	var chars []rune = nil
+	var chars []rune
 	slen := len(key)
 	for i := 0; i < slen; i++ {
 		if _, exists := node.children[key[i]]; exists {
@@ -86,7 +86,7 @@ func (t *Trie) HasDirty(txt string) bool {
 						if chars == nil {
 							chars = key
 						}
-						for t := i; t <= j; t++ {
+						if i <= j {
 							return true
 						}
 						i = j
