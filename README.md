@@ -1,25 +1,22 @@
 # cctest
 ## 开始使用
-### 环境配置
-```bash
-go mod tidy
-```
 ### 服务端
 ```bash
-cd serverimpl/chat
-go build main.go
-./main
+make
+sudo make install
+sudo make run 
 ```
-日志路径
-  * windows: D:\\service
-  * unix: /tmp/service
+- 清理bin、日志等文件
+```bash
+sudo make clean
+```
 
 ### 客户端
 切换到项目根目录后
 ```bash
 cd client
-go build client.go
-./client
+make
+make run
 ```
 
 ## 设计思路
