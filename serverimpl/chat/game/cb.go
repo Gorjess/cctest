@@ -76,3 +76,17 @@ func reqJoinRoom(p *Agent, req *pb.CSReqBody, rsp *pb.CSRspBody) {
 
 	p.SendClient(pb.CSMsgID_RSP_JOIN_ROOM, rsp, nil)
 }
+
+func reqChat(p *Agent, req *pb.CSReqBody, rsp *pb.CSRspBody) {
+	if req.Chat == nil {
+		return
+	}
+
+	rsp.Chat = &pb.CSRspChat{}
+	if e := RoomMgr.Chat(p, req.Chat); e != nil {
+		rsp.ErrCode = pb.ERROR_CODE_FAILED
+		rsp.ErrMsg = e.Error()
+	}
+
+	p.SendClient(pb.CSMsgID_REQ_CHAT, rsp, nil)
+}

@@ -257,3 +257,19 @@ func (m *Manager) GetRoomList(maxCount int32) []*pb.RoomInfo {
 	}
 	return ret
 }
+
+func (m *Manager) Chat(p *Agent, chat *pb.CSReqChat) error {
+	otherp := m.playersByName[chat.Username]
+	if otherp == nil {
+		return errors.New("target player not found")
+	}
+	if p.roomID != otherp.roomID {
+		return errors.New("not in one same room")
+	}
+
+	otherp.SendClient(pb.CSMsgID_NTF_CHAT, &pb.CSNtfBody{Chat: &pb.CSNtfChat{
+		From:    p.username,
+		Content: chat.Content,
+	}}, nil)
+	return nil
+}

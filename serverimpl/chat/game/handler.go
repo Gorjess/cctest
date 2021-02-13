@@ -75,4 +75,5 @@ func registerHandler() {
 	handlerCS(pb.CSMsgID_REQ_ROOM_CHAT, reqRoomChat)
 	handlerCS(pb.CSMsgID_REQ_ROOM_LIST, reqRoomList)
 	handlerCS(pb.CSMsgID_REQ_JOIN_ROOM, reqJoinRoom)
+	handlerCS(pb.CSMsgID_REQ_CHAT, reqChat)
 }

@@ -15,6 +15,7 @@ enum CSMsgID {
   REQ_ROOM_CHAT = 4;
   REQ_ROOM_LIST = 5;
   REQ_JOIN_ROOM = 6;
+  REQ_CHAT      = 7;
 
   RSP_BEGIN = 100;
   RSP_LOGIN = 101;
@@ -23,12 +24,14 @@ enum CSMsgID {
   RSP_ROOM_CHAT = 104;
   RSP_ROOM_LIST = 105;
   RSP_JOIN_ROOM = 106;
+  RSP_CHAT      = 107;
 
   NTF_BEGIN = 200;
   NTF_ROOM_MEMBER_ONLINE = 201;
   NTF_ROOM_CHAT = 202;
   NTF_ROOM_CLOSED = 203;
   NTF_HISTROY_MSG = 204;
+  NTF_CHAT        = 205;
 }
 
 message CSHead {
@@ -45,6 +48,7 @@ message CSReqBody {
   CSReqRoomChat    RoomChat = 5;
   CSReqRoomList    RoomList = 6;
   CSReqJoinRoom    JoinRoom = 7;
+  CSReqChat        Chat     = 8;
 }
 
 message CSRspBody {
@@ -57,6 +61,7 @@ message CSRspBody {
   CSRspRoomChat    RoomChat    = 7;
   CSRspRoomList    RoomList    = 8;
   CSRspJoinRoom    JoinRoom    = 9;
+  CSRspChat        Chat        = 10;
 }
 
 message CSNtfBody {
@@ -65,6 +70,7 @@ message CSNtfBody {
   CSNtfRoomChat         RoomChat = 3;
   CSNtfRoomClosed       RoomClosed = 4;
   CSNtfHistoryMsg       HistoryMsg = 5;
+  CSNtfChat             Chat       = 6;
 }
 
 message CSReqLogin {
@@ -123,6 +129,15 @@ message CSRspJoinRoom {
 
 }
 
+message CSReqChat {
+  string content = 1;
+  string username = 2;
+}
+
+message CSRspChat {
+
+}
+
 message CSNtfKick {
 
 }
@@ -150,6 +165,11 @@ message HistoryChat {
 message CSNtfHistoryMsg {
   repeated HistoryChat History = 1;
   int64                RoomID  = 2;
+}
+
+message CSNtfChat {
+  string from = 1;
+  string content = 2;
 }
 
 
