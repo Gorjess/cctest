@@ -1,4 +1,4 @@
-package main
+package agent
 
 import (
 	"bufio"
@@ -17,7 +17,8 @@ import (
 	"time"
 )
 
-func NewTCPClient() {
+func New() {
+	registerHandlers()
 	client := new(network.TCPClient)
 	client.Addr = "127.0.0.1:3066"
 	client.ConnectInterval = 3 * time.Second
@@ -46,7 +47,7 @@ func NewPlayer(conn *network.TCPConn) agent.Agent {
 	// login
 	rand.Seed(time.Now().UnixNano())
 	p.send(pb.CSMsgID_REQ_LOGIN, &pb.CSReqBody{Login: &pb.CSReqLogin{
-		Username: "test_"+strconv.Itoa(rand.Intn(1000)),
+		Username: "test_" + strconv.Itoa(rand.Intn(1000)),
 	}})
 
 	p.readTask()
@@ -173,7 +174,7 @@ func dealMsg(conn network.IConn, recvBuffer *bytes.Buffer, onceBuffer []byte, ms
 
 var callbacks = map[pb.CSMsgID]func(*Player, interface{}){}
 
-func register() {
+func registerHandlers() {
 	callbacks[pb.CSMsgID_RSP_LOGIN] = rspLogin
 	callbacks[pb.CSMsgID_RSP_ROOM_LIST] = rspRoomList
 	callbacks[pb.CSMsgID_RSP_JOIN_ROOM] = rspJoinRoom
@@ -328,10 +329,4 @@ func (p *Player) send(msgID pb.CSMsgID, body interface{}) {
 	}
 
 	log.Release("send msg:[%s][%v]", msgID, body)
-}
-
-func main() {
-	register()
-
-	NewTCPClient()
 }

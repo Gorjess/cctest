@@ -2,7 +2,6 @@ package main
 
 import (
 	"cloudcadetest/framework/factory"
-	"cloudcadetest/framework/factory/platform"
 	"cloudcadetest/framework/module"
 	"cloudcadetest/modconf"
 	"cloudcadetest/serverimpl/chat/conf"
@@ -11,11 +10,14 @@ import (
 	"cloudcadetest/serverimpl/chat/modules/self"
 )
 
+var InstallAt string
+
 func main() {
+	println("install at:", InstallAt)
 	s := factory.New(&modconf.ServerConf{
 		LenStackBuf:  4096,
 		LogLevel:     "release",
-		LogPath:      platform.GetLogRootPath(),
+		LogPath:      InstallAt + "/log",
 		LogFileName:  "server",
 		LogChanNum:   100000,
 		RollSize:     200,
