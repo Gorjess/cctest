@@ -4,20 +4,20 @@ import (
 	"cloudcadetest/framework/module"
 )
 
-type FSkeleton int
+type filterSkeleton int
 
-func NewFS() *FSkeleton {
-	return new(FSkeleton)
+func NewFS() *filterSkeleton {
+	return new(filterSkeleton)
 }
 
-func (s *FSkeleton) GetServerModule() *module.ServerMod {
+func (fs *filterSkeleton) GetServerModule() *module.ServerMod {
 	return SM
 }
 
-func (s *FSkeleton) GetID() int64 {
+func (fs *filterSkeleton) GetID() int64 {
 	return 1
 }
 
-func (s *FSkeleton) GetWordListFilePath() string {
+func (fs *filterSkeleton) GetWordListFilePath() string {
 	return "list.txt"
 }

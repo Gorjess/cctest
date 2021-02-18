@@ -2,7 +2,8 @@ package game
 
 import (
 	"cloudcadetest/common/task"
-	"cloudcadetest/common/wordfilter"
+	"cloudcadetest/common/word/filter"
+	"cloudcadetest/common/word/frequency"
 	"cloudcadetest/framework/log"
 	"cloudcadetest/pb"
 	"container/list"
@@ -15,29 +16,31 @@ import (
 )
 
 type Manager struct {
-	*FSkeleton
+	*filterSkeleton
 	taskPool      *task.Pool
 	roomIDBase    int64
 	rooms         map[int64]*Room
 	validRooms    *list.List
 	players       map[int64]*Agent
 	playersByName map[string]*Agent
-	filter        *wordfilter.Filter
+	filter        *filter.Filter
 	names         map[string]struct{}
+
+	wordFrequency *frequency.Frequency
 }
 
 func NewRoomMgr() *Manager {
 	m := &Manager{
-		taskPool:      task.NewTaskPool(SM, 0, 0),
-		roomIDBase:    0,
-		rooms:         map[int64]*Room{},
-		names:         map[string]struct{}{},
-		players:       map[int64]*Agent{},
-		playersByName: map[string]*Agent{},
-		validRooms:    list.New(),
-		FSkeleton:     NewFS(),
+		taskPool:       task.NewTaskPool(SM, 0, 0),
+		roomIDBase:     0,
+		rooms:          map[int64]*Room{},
+		names:          map[string]struct{}{},
+		players:        map[int64]*Agent{},
+		playersByName:  map[string]*Agent{},
+		validRooms:     list.New(),
+		filterSkeleton: NewFS(),
 	}
-	m.filter = wordfilter.New(m)
+	m.filter = filter.New(m)
 	return m
 }
 
@@ -144,6 +147,10 @@ func (m *Manager) Leave(playerFD, roomID int64) error {
 	delete(m.playersByName, p.GetUsername())
 
 	return nil
+}
+
+func (m *Manager) recordWordFrequency(word string) {
+	m.wordFrequency.Add(word)
 }
 
 func (m *Manager) RoomChat(playerFD, roomID int64, content string) {

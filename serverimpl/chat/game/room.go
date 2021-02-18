@@ -1,7 +1,7 @@
 package game
 
 import (
-	"cloudcadetest/common/wordfilter"
+	"cloudcadetest/common/word/filter"
 	"cloudcadetest/framework/log"
 	"cloudcadetest/pb"
 	"container/list"
@@ -9,22 +9,22 @@ import (
 )
 
 type Room struct {
-	*FSkeleton
+	*filterSkeleton
 	id          int64
 	node        *list.Element
 	members     map[int64]struct{}
 	historyMsgs *list.List
-	filter      *wordfilter.Filter
+	filter      *filter.Filter
 }
 
 func NewRoom(id int64) *Room {
 	r := &Room{
-		id:          id,
-		historyMsgs: list.New(),
-		members:     map[int64]struct{}{},
-		FSkeleton:   NewFS(),
+		id:             id,
+		historyMsgs:    list.New(),
+		members:        map[int64]struct{}{},
+		filterSkeleton: NewFS(),
 	}
-	r.filter = wordfilter.New(r)
+	r.filter = filter.New(r)
 
 	return r
 }
