@@ -22,6 +22,7 @@ install:
 	@rm -rf $(INSTALL_TOP)
 	@mkdir -p $(INSTALL_TOP)/conf
 	@cp $(CHAT_ROOT)/$(BINARY) $(INSTALL_TOP)
+	@cp $(CHAT_ROOT)/list.txt $(INSTALL_TOP)
 	@cp $(CHAT_ROOT)/conf/config.json $(INSTALL_TOP)/conf
 	@echo "finish installing"
 
