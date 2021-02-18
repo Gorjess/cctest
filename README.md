@@ -56,6 +56,11 @@ make run
 * 目前已测试脏字过滤功能
   
 ## 性能数据
+* 脏字替换性能：
+```bash
+BenchmarkFilter_Check-8   	    7498	    164053 ns/op
+```
+* 服务器吞吐：
 ![image](https://github.com/Gorjess/cctest/blob/master/profile.png)
 
 ## TODO
