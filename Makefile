@@ -6,9 +6,8 @@ TARGET_OS=
 INSTALL_TOP=
 
 ifeq ($(OS),Windows_NT)
-    BINARY=$(BINARY).exe
     TARGET_OS=Windows
-    INSTALL_TOP=D:/sevice
+    INSTALL_TOP=../chat
 else
     TARGET_OS=$(shell uname)
     INSTALL_TOP=/usr/local/chatservice
@@ -19,10 +18,11 @@ build:
 	@echo "finish building "$(BINARY)
 
 install:
-	@mkdir -p $(INSTALL_TOP)
+	@test -d $(INSTALL_TOP) && rm -rf $(INSTALL_TOP)
+	@rm -rf $(INSTALL_TOP)
 	@mkdir -p $(INSTALL_TOP)/conf
 	@cp $(CHAT_ROOT)/$(BINARY) $(INSTALL_TOP)
-	@cp $(CHAT_ROOT)/conf/*.json $(INSTALL_TOP)
+	@cp $(CHAT_ROOT)/conf/config.json $(INSTALL_TOP)/conf
 	@echo "finish installing"
 
 run:
@@ -36,7 +36,7 @@ echo:
 	@echo "server bin: "$(BINARY)
 
 clean:
-	@rm -rf $(INSTALL_TOP)/service
+	@rm -rf $(INSTALL_TOP)
 	@@cd $(CHAT_ROOT) && rm $(BINARY)
 	@echo "finish cleaning"
 

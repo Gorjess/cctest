@@ -2,6 +2,10 @@
 
 BINARY=client
 
+ifeq ($(OS),Windows_NT)
+#	BINARY=client.exe
+endif
+
 build:
 	@go build -o $(BINARY)
 	@echo "finish building"

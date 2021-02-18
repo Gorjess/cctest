@@ -2,10 +2,15 @@ package wordfilter
 
 import (
 	"cloudcadetest/common/task"
-	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/module"
 	"strconv"
 )
+
+type IFilterSkeleton interface {
+	GetServerModule() *module.ServerMod
+	GetID() int64
+	GetWordListFilePath() string
+}
 
 type Filter struct {
 	srvMod   *module.ServerMod
@@ -14,34 +19,44 @@ type Filter struct {
 	trieNode *Trie
 }
 
-func New(sm *module.ServerMod, id int64) *Filter {
+func New(ifs IFilterSkeleton) *Filter {
 	f := &Filter{
-		id:       id,
+		id:       ifs.GetID(),
 		trieNode: NewTrie(),
-		srvMod:   sm,
-		tasks:    task.NewTaskPool(sm, 0, 0),
 	}
-	f.trieNode.InsertFile("list.txt")
+	if ifs.GetServerModule() != nil {
+		f.tasks = task.NewTaskPool(ifs.GetServerModule(), 0, 0)
+	}
+	f.trieNode.InsertFile(ifs.GetWordListFilePath())
 	return f
 }
 
 func (f *Filter) check(content string) string {
-	//return content.
-	log.Release("content:%s, passed%t", content, f.trieNode.HasDirty(content))
+	//log.Release("content:%s, passed:%t", content, f.trieNode.HasDirty(content))
 	return f.trieNode.Replace(content)
 }
 
 func (f *Filter) Check(content string, onFinish func(newStr string)) {
-	newStr := content
-	f.tasks.AddTask(
-		func() {
-			newStr = f.check(content)
-		},
-		func() {
+	var (
+		safeFinish = func(s string) {
 			if onFinish != nil {
-				onFinish(newStr)
+				onFinish(s)
 			}
-		},
-		strconv.FormatInt(f.id, 10),
+		}
 	)
+
+	if f.tasks != nil {
+		newStr := content
+		f.tasks.AddTask(
+			func() {
+				newStr = f.check(content)
+			},
+			func() {
+				safeFinish(newStr)
+			},
+			strconv.FormatInt(f.id, 10),
+		)
+	} else {
+		safeFinish(f.check(content))
+	}
 }

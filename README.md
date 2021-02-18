@@ -53,12 +53,14 @@ make run
   
 ## 测试框架
 [gotest](https://github.com/cweill/gotests)
+* 目前已测试脏字过滤功能
   
 ## 性能数据
 ![image](https://github.com/Gorjess/cctest/blob/master/profile.png)
 
 ## TODO
-* 单元测试(目前仅多开客户端进行了测试)
+* 单元测试
+    * 聊天功能，多开客户端进行了测试    
 * GM命令： /popular n
 
   
