@@ -9,6 +9,7 @@ import (
 )
 
 type Room struct {
+	*FSkeleton
 	id          int64
 	node        *list.Element
 	members     map[int64]struct{}
@@ -17,12 +18,15 @@ type Room struct {
 }
 
 func NewRoom(id int64) *Room {
-	return &Room{
+	r := &Room{
 		id:          id,
 		historyMsgs: list.New(),
 		members:     map[int64]struct{}{},
-		filter:      wordfilter.New(SM, id),
+		FSkeleton:   NewFS(),
 	}
+	r.filter = wordfilter.New(r)
+
+	return r
 }
 
 func (r *Room) AddMsg(fromUsername, msg string) int {

@@ -15,6 +15,7 @@ import (
 )
 
 type Manager struct {
+	*FSkeleton
 	taskPool      *task.Pool
 	roomIDBase    int64
 	rooms         map[int64]*Room
@@ -26,7 +27,7 @@ type Manager struct {
 }
 
 func NewRoomMgr() *Manager {
-	return &Manager{
+	m := &Manager{
 		taskPool:      task.NewTaskPool(SM, 0, 0),
 		roomIDBase:    0,
 		rooms:         map[int64]*Room{},
@@ -34,8 +35,10 @@ func NewRoomMgr() *Manager {
 		players:       map[int64]*Agent{},
 		playersByName: map[string]*Agent{},
 		validRooms:    list.New(),
-		filter:        wordfilter.New(SM, 1),
+		FSkeleton:     NewFS(),
 	}
+	m.filter = wordfilter.New(m)
+	return m
 }
 
 func (m *Manager) newTid() int64 {
