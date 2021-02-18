@@ -57,9 +57,12 @@ make run
   
 ## 性能数据
 * 脏字替换性能：
-```bash
-BenchmarkFilter_Check-8   	    7498	    164053 ns/op
-```
+    * 8核处理器，4G hz主频，过滤固定的100字节字符串，测试5次，性能数据如下        
+        * BenchmarkFilter_Check-8   	    23619	    51741 ns/op
+        * BenchmarkFilter_Check-8   	    26313	    45873 ns/op
+        * BenchmarkFilter_Check-8   	    25368	    44862 ns/op
+        * BenchmarkFilter_Check-8   	    23949	    51070 ns/op
+        * BenchmarkFilter_Check-8   	    25860	    46174 ns/op
 * 服务器吞吐：
 ![image](https://github.com/Gorjess/cctest/blob/master/profile.png)
 
