@@ -15,10 +15,9 @@ endif
 
 build:
 	@cd $(CHAT_ROOT) && go build -o ${BINARY} -ldflags "-X main.InstallAt=$(INSTALL_TOP)"
-	@echo "finish building "$(BINARY)
+	@echo finish building $(BINARY)
 
 install:
-	@test -d $(INSTALL_TOP) && rm -rf $(INSTALL_TOP)
 	@rm -rf $(INSTALL_TOP)
 	@mkdir -p $(INSTALL_TOP)/conf
 	@cp $(CHAT_ROOT)/$(BINARY) $(INSTALL_TOP)
