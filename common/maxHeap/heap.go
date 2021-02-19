@@ -15,7 +15,7 @@ type Node struct {
 
 func (n *Node) String() string {
 	if n == nil || n.value == nil {
-		return "n/a"
+		return ""
 	}
 	return n.value.String()
 }
@@ -25,7 +25,12 @@ func Literal(node *Node) string {
 	if node == nil {
 		return ""
 	}
-	s := fmt.Sprintf("[%s]-", node.String())
+
+	s := ""
+	ns := node.String()
+	if ns != "" {
+		s = fmt.Sprintf("-[%s]", node.String())
+	}
 
 	s += Literal(node.left)
 	s += Literal(node.right)
@@ -54,5 +59,6 @@ func FromSlice(input []IEntry) *Node {
 		node = new(Node)
 	)
 	completeBT(input, node, 0, len(input))
+
 	return node
 }

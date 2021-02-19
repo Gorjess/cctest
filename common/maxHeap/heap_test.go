@@ -1,7 +1,6 @@
 package maxHeap
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 )
@@ -16,19 +15,18 @@ func (ce CEntry) String() string {
 	return strconv.Itoa(int(ce))
 }
 
-func makeSlice() []IEntry {
-	var o = make([]IEntry, 100)
-	for i := 0; i < 100; i++ {
+var sli = func(l int) []IEntry {
+	var (
+		o = make([]IEntry, l)
+	)
+	for i := 0; i < l; i++ {
 		o[i] = CEntry(i)
 	}
-
 	return o
-}
+}(1000)
 
 func BenchmarkFromSlice(b *testing.B) {
-	sli := makeSlice()
-	for i := 0; i < 1; i++ {
-		n := FromSlice(sli)
-		fmt.Println(Literal(n))
+	for i := 0; i < b.N; i++ {
+		FromSlice(sli)
 	}
 }
