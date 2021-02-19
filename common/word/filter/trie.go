@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"cloudcadetest/framework/log"
 	"os"
+	"runtime"
 	"unicode/utf8"
 )
 
@@ -36,6 +37,12 @@ func (t *Trie) InsertFile(path string) {
 		return
 	}
 
+	endl := "\n"
+	if runtime.GOOS == "windows" {
+		endl = "\r\n"
+	}
+	l := len(endl)
+
 	defer func() {
 		if e := f.Close(); e != nil {
 			log.Error(e.Error())
@@ -48,7 +55,7 @@ func (t *Trie) InsertFile(path string) {
 		if err != nil {
 			break
 		}
-		t.insert(s[:len(s)-1])
+		t.insert(s[:len(s)-l])
 	}
 }
 
@@ -80,7 +87,7 @@ func (t *Trie) HasDirty(txt string) bool {
 		if _, exists := node.children[key[i]]; exists {
 			node = node.children[key[i]]
 			for j := i + 1; j < slen; j++ {
-				if _, exists := node.children[key[j]]; exists {
+				if _, exists = node.children[key[j]]; exists {
 					node = node.children[key[j]]
 					if node.end == true {
 						if chars == nil {
