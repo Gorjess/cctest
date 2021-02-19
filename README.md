@@ -9,6 +9,7 @@
 ## 开始使用
 ### 服务端
 ```bash
+make dep
 make
 sudo make install
 sudo make run 
