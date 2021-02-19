@@ -3,7 +3,8 @@
 * golang 1.11+
     * Windows
         * [mingw](https://jmeubank.github.io/tdm-gcc/)
-        * [git-bash](https://git-scm.com/downloads)，安装完成后，下述所有命令，请在git-bash下执行
+        * [git-bash](https://git-scm.com/downloads)
+        * 下述所有命令，请在git-bash下执行
      
 ## 开始使用
 ### 服务端
