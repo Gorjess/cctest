@@ -21,6 +21,7 @@ func main() {
 	}
 	println("chatserver installed at:", InstallAt)
 
+	// start pprof
 	go func() {
 		fmt.Println(http.ListenAndServe("localhost:1108", nil))
 	}()

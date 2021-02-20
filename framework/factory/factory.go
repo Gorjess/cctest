@@ -6,7 +6,6 @@ import (
 	"cloudcadetest/framework/module"
 	"cloudcadetest/modconf"
 	"fmt"
-	"math/rand"
 	"os"
 	"os/signal"
 	"time"
@@ -57,11 +56,8 @@ func (s *CServer) Run(mods []module.IModule) {
 		panic(err.Error())
 	}
 
-	rand.Seed(time.Now().UnixNano())
-
 	// Logger
 	if s.cfg.LogLevel != "" {
-		var err error
 		s.Logger, err = log.New(s.cfg.LogLevel, s.cfg.LogPath, s.cfg.LogFileName, s.cfg.LogChanNum, s.cfg.RollSize)
 		if err != nil {
 			panic(err)
