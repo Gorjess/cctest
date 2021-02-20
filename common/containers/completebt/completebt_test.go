@@ -1,4 +1,4 @@
-package maxHeap
+package completebt
 
 import (
 	"strconv"

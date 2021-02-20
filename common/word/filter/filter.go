@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"cloudcadetest/common/containers/trie"
 	"cloudcadetest/common/task"
 	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/module"
@@ -17,13 +18,13 @@ type Filter struct {
 	srvMod   *module.ServerMod
 	tasks    *task.Pool
 	id       int64
-	trieNode *Trie
+	trieNode *trie.Trie
 }
 
 func New(ifs IFilterSkeleton) *Filter {
 	f := &Filter{
 		id:       ifs.GetID(),
-		trieNode: NewTrie(),
+		trieNode: trie.New(),
 	}
 	if ifs.GetServerModule() != nil {
 		f.tasks = task.NewTaskPool(ifs.GetServerModule(), 0, 0)

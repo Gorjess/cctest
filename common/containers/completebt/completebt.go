@@ -1,6 +1,8 @@
-package maxHeap
+package completebt
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type IEntry interface {
 	Value() interface{}
