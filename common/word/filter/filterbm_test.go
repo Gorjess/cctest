@@ -1,8 +1,7 @@
-package test
+package filter
 
 import (
 	"bytes"
-	"cloudcadetest/common/word/filter"
 	"cloudcadetest/framework/module"
 	"testing"
 )
@@ -34,7 +33,7 @@ func makeInputString() string {
 }
 
 func BenchmarkFilter_Check(b *testing.B) {
-	f := filter.New(newCFS())
+	f := New(newCFS())
 	for i := 0; i < b.N; i++ {
 		f.Check(makeInputString(), func(newStr string) {
 			// foo-bar

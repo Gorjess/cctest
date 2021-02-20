@@ -115,7 +115,3 @@ func (r *Room) broadcast(playerFD int64, msgID pb.CSMsgID, csNtf *pb.CSNtfBody) 
 		}, nil,
 	)
 }
-
-func (r *Room) mostFrequentWord(bySeconds int) string {
-	return ""
-}

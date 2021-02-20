@@ -1,15 +1,15 @@
-package filter
+package trie
 
 import (
 	"bufio"
 	"cloudcadetest/framework/log"
 	"os"
-	"runtime"
 	"unicode/utf8"
 )
 
 type Trie struct {
-	root *trieNode
+	root  *trieNode
+	count int // count of word
 }
 
 type trieNode struct {
@@ -17,7 +17,7 @@ type trieNode struct {
 	end      bool
 }
 
-func NewTrie() *Trie {
+func New() *Trie {
 	var r = &Trie{
 		root: newNode(),
 	}
@@ -37,12 +37,6 @@ func (t *Trie) InsertFile(path string) {
 		return
 	}
 
-	endl := "\n"
-	if runtime.GOOS == "windows" {
-		endl = "\r\n"
-	}
-	l := len(endl)
-
 	defer func() {
 		if e := f.Close(); e != nil {
 			log.Error(e.Error())
@@ -51,12 +45,18 @@ func (t *Trie) InsertFile(path string) {
 
 	r := bufio.NewReader(f)
 	for {
-		s, err := r.ReadString('\n')
+		bs, _, err := r.ReadLine()
 		if err != nil {
 			break
 		}
-		t.insert(s[:len(s)-l])
+		t.insert(string(bs))
 	}
+
+	log.Release("word inserted:%d", t.count)
+}
+
+func (t *Trie) Insert(word string) {
+	t.insert(word)
 }
 
 func (t *Trie) insert(txt string) {
@@ -72,7 +72,12 @@ func (t *Trie) insert(txt string) {
 		node = node.children[key[i]]
 	}
 
-	node.end = true
+	if !node.end {
+		node.end = true
+		t.count++
+	} else {
+		log.Release("duplicate txt:%s", txt)
+	}
 }
 
 func (t *Trie) HasDirty(txt string) bool {
@@ -120,7 +125,7 @@ func (t *Trie) Replace(txt string) string {
 		if _, exists := node.children[key[i]]; exists {
 			node = node.children[key[i]]
 			for j := i + 1; j < slen; j++ {
-				if _, exists := node.children[key[j]]; exists {
+				if _, exists = node.children[key[j]]; exists {
 					node = node.children[key[j]]
 					if node.end == true {
 						if chars == nil {

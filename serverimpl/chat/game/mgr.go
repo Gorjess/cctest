@@ -4,6 +4,7 @@ import (
 	"cloudcadetest/common/task"
 	"cloudcadetest/common/word/filter"
 	"cloudcadetest/common/word/frequency"
+	"cloudcadetest/common/word/frequency/wordmeta"
 	"cloudcadetest/framework/log"
 	"cloudcadetest/pb"
 	"container/list"
@@ -25,7 +26,6 @@ type Manager struct {
 	playersByName map[string]*Agent
 	filter        *filter.Filter
 	names         map[string]struct{}
-
 	wordFrequency *frequency.Frequency
 }
 
@@ -39,6 +39,7 @@ func NewRoomMgr() *Manager {
 		playersByName:  map[string]*Agent{},
 		validRooms:     list.New(),
 		filterSkeleton: NewFS(),
+		wordFrequency:  frequency.New(),
 	}
 	m.filter = filter.New(m)
 	return m
@@ -165,8 +166,9 @@ func (m *Manager) RoomChat(playerFD, roomID int64, content string) {
 
 	// GM
 	if strings.Index(content, "/") == 0 {
-		content = m.execGM(r, content[1:])
-		r.notifyRoomChat(-1, content)
+		m.execGM(content[1:], func(result string) {
+			r.notifyRoomChat(-1, result)
+		})
 	} else {
 		r.filter.Check(content, func(newStr string) {
 			r.AddMsg(p.username, newStr)
@@ -175,10 +177,10 @@ func (m *Manager) RoomChat(playerFD, roomID int64, content string) {
 	}
 }
 
-func (m *Manager) execGM(r *Room, cmd string) string {
+func (m *Manager) execGM(cmd string, onFinish func(result string)) {
 	ss := strings.Split(cmd, " ")
 	if len(ss) != 2 {
-		return ""
+		onFinish("invalid cmd")
 	}
 
 	cmd = ss[0]
@@ -188,7 +190,17 @@ func (m *Manager) execGM(r *Room, cmd string) string {
 	case "popular":
 		secs, e := strconv.Atoi(arg)
 		if e == nil {
-			return r.mostFrequentWord(secs)
+			m.mostFrequentWord(secs, func(meta *wordmeta.Data, e error) {
+				if e != nil {
+					log.Error("get freq failed:%s", e.Error())
+					return
+				}
+				if meta == nil {
+					log.Error("nil meta")
+					return
+				}
+				onFinish(meta.Word)
+			})
 		}
 	case "stats":
 		p := m.playersByName[arg]
@@ -202,11 +214,28 @@ func (m *Manager) execGM(r *Room, cmd string) string {
 				d -= min * time.Minute
 				return fmt.Sprintf("%02d %02d %02d %02d", day, h, min, d)
 			}
-			return formatDur(time.Now().Sub(p.LoginTime))
+			onFinish(formatDur(time.Now().Sub(p.LoginTime)))
 		}
+	default:
+		onFinish("non-supported cmd")
 	}
+}
 
-	return ""
+func (m *Manager) mostFrequentWord(lastNSeconds int, onFinish func(meta *wordmeta.Data, e error)) {
+	m.wordFrequency.GetFrequencyByTime(lastNSeconds, func(meta *wordmeta.Data, e error) {
+		if onFinish == nil {
+			if e != nil {
+				log.Error("get freq failed:%s", e.Error())
+				return
+			}
+			if meta == nil {
+				log.Error("nil meta")
+				return
+			}
+		} else {
+			onFinish(meta, e)
+		}
+	})
 }
 
 func (m *Manager) notifyHistoryMsgs(playerFD int64) {
