@@ -3,7 +3,6 @@ package frequency
 import (
 	"cloudcadetest/common/word/frequency/wordmeta"
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 )
@@ -12,8 +11,7 @@ var fh = New()
 
 func insertWords(n int) {
 	for i := 0; i < n; i++ {
-		rand.Seed(time.Now().UnixNano())
-		fh.Add(fmt.Sprintf("hello %d", rand.Int()))
+		fh.Add("hello")
 	}
 }
 

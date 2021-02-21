@@ -158,7 +158,7 @@ func (server *TCPServer) run() {
 		if len(server.conns) >= maxConnNum {
 			server.mutexConns.Unlock()
 			closeConn(conn)
-			log.Release("too many connections %v", maxConnNum)
+			log.Release("too many connections %d", maxConnNum)
 			continue
 		}
 

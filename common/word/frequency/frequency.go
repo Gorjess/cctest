@@ -29,7 +29,7 @@ type Frequency struct {
 func New() *Frequency {
 	f := &Frequency{
 		frqBySec:  list.New(),
-		wordChan:  make(chan string, 100),
+		wordChan:  make(chan string, 3500),
 		sortTasks: make(chan *sortTask, 10000),
 	}
 	f.frqBySec.PushBack(newSecWords())
