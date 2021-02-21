@@ -1,19 +1,27 @@
 package wordsbysec
 
-import "cloudcadetest/common/word/frequency/wordmeta"
+import (
+	"cloudcadetest/common/word/frequency/wordmeta"
+	"time"
+)
 
 type Words struct {
 	maxWordNum int
-	maxWord    *wordmeta.Data
+	MaxWord    *wordmeta.Data
 	words      map[string]int
+	TS         int64
 }
 
 func New(maxWordNum int) *Words {
 	return &Words{
 		maxWordNum: maxWordNum,
-		maxWord:    new(wordmeta.Data),
 		words:      map[string]int{},
+		TS:         time.Now().Unix(),
 	}
+}
+
+func (w *Words) GetWordCount() int {
+	return len(w.words)
 }
 
 func (w *Words) Add(word string) {
@@ -24,10 +32,7 @@ func (w *Words) Add(word string) {
 	w.words[word]++
 
 	cnt := w.words[word]
-	if cnt > w.maxWord.Count {
-		w.maxWord = &wordmeta.Data{
-			Word:  word,
-			Count: cnt,
-		}
+	if w.MaxWord == nil || cnt > w.MaxWord.Count {
+		w.MaxWord = wordmeta.New(word, cnt)
 	}
 }

@@ -33,7 +33,8 @@ func newNode() *trieNode {
 func (t *Trie) InsertFile(path string) {
 	f, e := os.Open(path)
 	if e != nil {
-		log.Warn(e.Error())
+		wd, _ := os.Getwd()
+		log.Warn("wd:%s, e:%s", wd, e.Error())
 		return
 	}
 
@@ -52,7 +53,7 @@ func (t *Trie) InsertFile(path string) {
 		t.insert(string(bs))
 	}
 
-	log.Release("word inserted:%d", t.count)
+	//log.Release("word inserted:%d", t.count)
 }
 
 func (t *Trie) Insert(word string) {

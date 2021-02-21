@@ -21,7 +21,7 @@ func (cfs *CFilterSkeleton) GetID() int64 {
 }
 
 func (cfs *CFilterSkeleton) GetWordListFilePath() string {
-	return "../list.txt"
+	return "list.txt"
 }
 
 func makeInputString() string {

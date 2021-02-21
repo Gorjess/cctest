@@ -6,8 +6,8 @@ type Data struct {
 	Count int
 }
 
-func New(w string) *Data {
-	return &Data{Word: w, Count: 1}
+func New(w string, c int) *Data {
+	return &Data{Word: w, Count: c}
 }
 
 type Datas []*Data

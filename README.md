@@ -65,12 +65,12 @@ make run
   
 ## 性能数据
 * 脏字替换性能：
-    * 8核处理器，4G hz主频，过滤固定的100字节字符串，测试5次，性能数据如下        
-        * BenchmarkFilter_Check-8   	    23619	    51741 ns/op
-        * BenchmarkFilter_Check-8   	    26313	    45873 ns/op
-        * BenchmarkFilter_Check-8   	    25368	    44862 ns/op
-        * BenchmarkFilter_Check-8   	    23949	    51070 ns/op
-        * BenchmarkFilter_Check-8   	    25860	    46174 ns/op
+    * 8核处理器，4G hz主频，过滤固定的100字节字符串，单次操作耗时，大概33k ns，具体数据可参考common/word/filter/benchmark_stat.txt
+    * 可由以下命令自行测试
+    ```bash
+    cd common/word/filter
+    sh benchmark_stat.sh
+    ```        
 * 服务器吞吐：
 ![image](https://github.com/Gorjess/cctest/blob/master/profile.png)
 

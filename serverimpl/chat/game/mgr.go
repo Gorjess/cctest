@@ -196,10 +196,10 @@ func (m *Manager) execGM(cmd string, onFinish func(result string)) {
 					return
 				}
 				if meta == nil {
-					log.Error("nil meta")
-					return
+					onFinish("")
+				} else {
+					onFinish(meta.Word)
 				}
-				onFinish(meta.Word)
 			})
 		}
 	case "stats":

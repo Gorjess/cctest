@@ -12,6 +12,7 @@ import (
 )
 
 type sortTask struct {
+	ts           int64
 	lastNSeconds int
 	cb           func(meta *wordmeta.Data, e error)
 }
@@ -21,17 +22,24 @@ type Frequency struct {
 	frqBySec      *list.List
 	wordChan      chan string
 	sortTasks     chan *sortTask
+	produced      int32
+	consumed      int32
 }
 
 func New() *Frequency {
 	f := &Frequency{
 		frqBySec:  list.New(),
 		wordChan:  make(chan string, 100),
-		sortTasks: make(chan *sortTask, 100),
+		sortTasks: make(chan *sortTask, 10000),
 	}
+	f.frqBySec.PushBack(newSecWords())
 	go f.update()
 
 	return f
+}
+
+func newSecWords() *wordsbysec.Words {
+	return wordsbysec.New(1000)
 }
 
 func (f *Frequency) update() {
@@ -42,7 +50,9 @@ func (f *Frequency) update() {
 			f.onTimePassed()
 
 		case word := <-f.wordChan:
-			// consider tail as the node for the current second
+			// use tail as the node for the current second
+			//fmt.Printf("%d consume word:%s\n", time.Now().UnixNano(), word)
+			//atomic.AddInt32(&f.consumed, 1)
 			tail := f.frqBySec.Back()
 			if tail != nil {
 				ws, ok := tail.Value.(*wordsbysec.Words)
@@ -68,7 +78,7 @@ func (f *Frequency) onTimePassed() {
 		h := f.frqBySec.Front()
 		f.frqBySec.Remove(h)
 	}
-	f.frqBySec.PushBack(wordsbysec.New(1000))
+	f.frqBySec.PushBack(newSecWords())
 }
 
 func (f *Frequency) Add(sentence string) {
@@ -81,8 +91,12 @@ func (f *Frequency) Add(sentence string) {
 	for _, w := range words {
 		select {
 		case f.wordChan <- w:
+			//fmt.Printf("add word:%s, ts:%d\n", w,time.Now().UnixNano())
+			//atomic.AddInt32(&f.produced, 1)
 		default:
-			log.Error("too many pending words, lost:%s", w)
+			log.Warn("too many pending words, len:%d lost:%s",
+				len(f.wordChan), w/*, atomic.LoadInt32(&f.produced), atomic.LoadInt32(&f.consumed)*/)
+			//os.Exit(-1)
 		}
 	}
 }
@@ -95,10 +109,11 @@ func (f *Frequency) GetFrequencyByTime(lastNSeconds int, cb func(meta *wordmeta.
 	select {
 	case f.sortTasks <- &sortTask{
 		lastNSeconds: lastNSeconds,
+		ts:           time.Now().Unix(),
 		cb:           cb,
 	}:
 	default:
-		log.Error("too many pending get-freq tasks, lost:%d", lastNSeconds)
+		log.Warn("too many pending get-freq tasks, lost:%d", lastNSeconds)
 	}
 }
 
@@ -108,24 +123,63 @@ func (f *Frequency) processTask(task *sortTask) {
 	}
 
 	var (
-		frqs  = make(wordmeta.Datas, 0, task.lastNSeconds)
-		node  *list.Element
-		wmeta *wordmeta.Data
-		ok    bool
+		frqs      = make(wordmeta.Datas, 0, task.lastNSeconds)
+		words     *wordsbysec.Words
+		startNode = f.frqBySec.Back()
 	)
 
-	for i := 0; i < task.lastNSeconds; i++ {
-		node = f.frqBySec.Back()
-		if node == nil || node.Value == nil {
-			break
+	n2w := func(n *list.Element) *wordsbysec.Words {
+		if n == nil || n.Value == nil {
+			return nil
 		}
-		wmeta, ok = node.Value.(*wordmeta.Data)
+		w, ok := n.Value.(*wordsbysec.Words)
 		if !ok {
-			break
+			return nil
 		}
-		frqs = append(frqs, wmeta)
+		return w
 	}
 
-	sort.Sort(frqs)
-	task.cb(frqs[0], nil)
+	words = n2w(startNode)
+	if words == nil {
+		task.cb(nil, nil)
+		return
+	}
+	offset := int(task.ts - words.TS)
+	log.Release("offset:%d", offset)
+	for i := 0; i < offset; i++ {
+		if startNode == nil {
+			break
+		}
+		startNode = startNode.Prev()
+	}
+
+	for i := 0; i < task.lastNSeconds; i++ {
+		if startNode == nil {
+			log.Release("i:%d, nil node", i)
+			break
+		}
+
+		words = n2w(startNode)
+		if words == nil {
+			log.Release("i:%d, nil words", i)
+			break
+		}
+		if words.MaxWord != nil {
+			frqs = append(frqs, words.MaxWord)
+		} else {
+			log.Release("i:%d, nil max word, words:%d, ts:%d", i, words.GetWordCount(), words.TS)
+		}
+
+		startNode = startNode.Prev()
+	}
+
+	l := len(frqs)
+	if l > 0 {
+		if l > 1 {
+			sort.Sort(frqs)
+		}
+		task.cb(frqs[0], nil)
+	} else {
+		task.cb(nil, nil)
+	}
 }

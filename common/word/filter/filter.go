@@ -3,7 +3,6 @@ package filter
 import (
 	"cloudcadetest/common/containers/trie"
 	"cloudcadetest/common/task"
-	"cloudcadetest/framework/log"
 	"cloudcadetest/framework/module"
 	"strconv"
 )
@@ -34,7 +33,7 @@ func New(ifs IFilterSkeleton) *Filter {
 }
 
 func (f *Filter) check(content string) string {
-	log.Release("content:%s, passed:%t", content, !f.trieNode.HasDirty(content))
+	//log.Release("content:%s, passed:%t", content, !f.trieNode.HasDirty(content))
 	return f.trieNode.Replace(content)
 }
 
